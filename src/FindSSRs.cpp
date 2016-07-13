@@ -22,7 +22,7 @@ FindSSRs::FindSSRs(Arguments* _args) : out_file(_args->getOutFileName())
 	this->finished_threads = 1;
 	
 	this->progress_bar = ProgressMeter();
-	this->atomicity_checker = AtomicityChecker();
+	//this->atomicity_checker = AtomicityChecker();
 }
 FindSSRs::~FindSSRs()
 {

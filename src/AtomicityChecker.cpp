@@ -60,7 +60,7 @@ void AtomicityChecker::safeInsert(uint32_t x, unordered_set<uint32_t>* xfactors)
 	sem_wait(&(this->lock));
 	if (!this->factors->count(x)) // if x is not already in this->factors
 	{
-		std::pair<uint32_t, unordered_set<uint32_t>*> temp_pair(x, xfactors);
+		std::pair<uint32_t, unordered_set<uint32_t> * > temp_pair(x, xfactors);
 		this->factors->insert(temp_pair); // add it
 		//this->factors->insert(std::make_pair<uint32_t, unordered_set<uint32_t>*>(x, xfactors)); // add it
 	}
