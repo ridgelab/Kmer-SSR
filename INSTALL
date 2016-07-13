@@ -1,0 +1,30 @@
+INSTALLATION INSTRUCTIONS
+=========================
+
+COMPILE
+-------
+Simply type `make'.  The binary will be in the `bin' directory.
+
+
+INSTALL
+-------
+Type `make' followed by `make install'.  The binary will be in both the `bin'
+and `/usr/local/bin' directories.  To change the installation location, change
+the `PREFIX' variable near the top of `Makefile'.  
+
+
+UNINSTALL
+---------
+Simply type `make clean'.  This will remove the binary in the `bin' directory.
+If you installed with `make install', it will also remove the binary at the
+path provided by the `PREFIX' variable in the `Makefile'.
+
+The object (.o) files in the `obj' directory will not be deleted. To remove
+those files as well, type `make realclean'. If you use `make realclean', you
+need not first type `make clean' as it will do it for you. Running `make
+realclean' will also remove the `bin' and `obj' directories.
+
+
+IMPORTANT NOTES
+---------------
+Your compiler must support C++11.
