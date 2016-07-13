@@ -4,7 +4,6 @@
 */
 
 #include "../include/FindSSRs.h"
-#include "../lib/sais-lite-lcp/sais.c"
 
 using namespace std;
 
@@ -23,6 +22,7 @@ FindSSRs::FindSSRs(Arguments* _args) : out_file(_args->getOutFileName())
 	this->finished_threads = 1;
 	
 	this->progress_bar = ProgressMeter();
+	this->atomicity_checker = AtomicityChecker();
 }
 FindSSRs::~FindSSRs()
 {
@@ -312,7 +312,7 @@ void FindSSRs::findSSRsInSequence(const string &header, const string &sequence, 
 	this->progress_bar.updateProgress(sequence.size(), true);
 }
 
-bool FindSSRs::isGood(const string &base, uint32_t repeats, uint32_t position, const vector<bool> &filter, uint32_t offset) const
+bool FindSSRs::isGood(const string &base, uint32_t repeats, uint32_t position, const vector<bool> &filter, uint32_t offset)
 {
 	if (!this->args->enumerated_ssrs->empty() && this->args->enumerated_ssrs->count(base) == 0)
 	{
@@ -320,6 +320,11 @@ bool FindSSRs::isGood(const string &base, uint32_t repeats, uint32_t position, c
 	}
 
 	if (repeats < 2)
+	{
+		return false;
+	}
+
+	if (!this->atomicity_checker.isAtomic(base))
 	{
 		return false;
 	}

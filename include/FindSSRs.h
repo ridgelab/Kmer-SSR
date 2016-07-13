@@ -23,6 +23,7 @@
 #include "FastaSequences.h"
 #include "OutputFile.h"
 #include "ProgressMeter.h"
+#include "AtomicityChecker.h"
 
 using namespace std;
 
@@ -43,8 +44,9 @@ private:
 	ProgressMeter progress_bar;
 	ofstream out;
 	sem_t lock;
+	AtomicityChecker atomicity_checker;
 
-	bool isGood(const string &base, uint32_t repeats, uint32_t position, const vector<bool> &filter, uint32_t offset) const;
+	bool isGood(const string &base, uint32_t repeats, uint32_t position, const vector<bool> &filter, uint32_t offset);
 
 public:
 	FindSSRs(Arguments* _args);
