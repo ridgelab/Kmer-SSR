@@ -42,9 +42,16 @@ private:
 	uint32_t max_repeats;                   // -R:
 	uint32_t threads;                       // -t:
 	string version;                         // -v
+
+	string version_file_name;
+	string usage_file_name;
+	string help_file_name;
 	
 	// functions
 	void processArgs(int argc, char* argv[]);
+	string generateVersionMessage() const;
+	string generateUsageMessage() const;
+	string generateHelpMessage() const;
 	uint32_t parsePositiveIntegerArgument(string argument);
 	uint32_t parsePositiveIntegerArgument(char* argument);
 	void addToPeriods(string period_s);
@@ -52,6 +59,8 @@ private:
 	vector<string> split(string str, char sep);
 	void addToAlphabet(string alphabet_str);
 	string generateHelpMessage() const;
+	void autoDetectCompressedInput();
+	void autoDetectCompressedOutput();
 
 public:
 	// fields

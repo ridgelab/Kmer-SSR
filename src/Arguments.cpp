@@ -15,8 +15,9 @@ bool (*reverseOrderPointer) (uint32_t, uint32_t) = reverseOrder;
 // constuctor / destructor
 Arguments::Arguments(int argc, char* argv[])
 {
-	this->usage_message = "USAGE: kmer-ssr [-a a1,..,aN] [-A] [-b|-g] [-B|-G] [-d] [-e] [-h] [-i file]\n                [-n int] [-N int] [-o file] [-p p1,..,pN] [-r int] [-R int]\n                [-s s1,..,sN] [-t int] [-v]\n";
-	this->help_message = this->generateHelpMessage();
+	this->version_file_name = "../.VERSION";
+	this->usage_file_name = "../.USAGE";
+	this->help_file_name = "../.HELP";
 
 	this->alphabet = new unordered_set<char>();
 	this->periods = new set<uint32_t, bool(*)(uint32_t,uint32_t)>(reverseOrderPointer);
@@ -65,7 +66,7 @@ string Arguments::getUsageStatement(bool error) const
 {
 	if (error)
 	{
-		return "\033[0;31mUSAGE: " + this->usage_message + " (-h for help)\033[0m";
+		return "\033[0;31m" + this->usage_message + " (-h for help)\033[0m";
 	}
 	
 	return this->usage_message;
@@ -136,6 +137,7 @@ void Arguments::processArgs(int argc, char* argv[])
 			case 'G': this->gzipped_output = true; break;
 			case 'h':
 				cerr << this->usage_message << endl << endl << this->help_message << endl << endl; break;
+			case 'H': this->help_file_name = optarg; break;
 			case 'i': this->input_file_name = optarg; break;
 			case 'n': min_nucleotides_str = optarg; break;
 			case 'N': max_nucleotides_str = optarg; break;
@@ -146,8 +148,10 @@ void Arguments::processArgs(int argc, char* argv[])
 			case 'R': max_repeats_str = optarg; break;
 			case 's': enumerated_ssrs_str = optarg; break;
 			case 't': threads_str = optarg; break;
+			case 'u': this->usage_file_name = optarg; break;
 			case 'v':
 				cerr << "Version: " << this->version << endl; break;
+			case 'V': this->version_file_name = optarg; break;
 			case '?':
 				if (optopt == 'c')
 				{
@@ -166,6 +170,10 @@ void Arguments::processArgs(int argc, char* argv[])
 				abort();
 		}
 	}
+	
+	this->version = this->generateVersionMessage();
+	this->usage_message = this->generateUsageMessage();
+	this->help_message = this->generateHelpMessage();
 
 	// check for positional parameters (which is an error)
 	if (optind < argc)
@@ -191,7 +199,41 @@ void Arguments::processArgs(int argc, char* argv[])
 	this->addToEnumeratedSSRs(enumerated_ssrs_str);
 	this->addToPeriods(period_s);
 
-	cout << "threads: " << this->threads << endl;
+	this->autoDetectCompressedInput();
+	this->autoDetectCompressedOutput();
+
+}
+
+void Arguments::autoDetectCompressedInput()
+{
+	if (this->input_file_name.size() >= 3 && this->input_file_name.substr(this->input_file_name.size() - 3, 3) == ".gz")
+	{
+		this->gzipped_input = true;
+	}
+	if (this->input_file_name.size() >= 4 && this->input_file_name.substr(this->input_file_name.size() - 4, 4) == ".bz2")
+	{
+		this->bzipped2_input = true;
+	}
+	if (this->bzipped2_input && this->gzipped_input)
+	{
+		throw "ERROR: Your input cannot be compressed with both gzip and bzip2.";
+	}
+}
+
+void Arguments::autoDetectCompressedOutput()
+{
+	if (this->output_file_name.size() >= 3 && this->output_file_name.substr(this->output_file_name.size() - 3, 3) == ".gz")
+	{
+		this->gzipped_output = true;
+	}
+	if (this->output_file_name.size() >= 4 && this->output_file_name.substr(this->output_file_name.size() - 4, 4) == ".bz2")
+	{
+		this->bzipped2_output = true;
+	}
+	if (this->bzipped2_output && this->gzipped_output)
+	{
+		throw "ERROR: Your output cannot be compressed with both gzip and bzip2.";
+	}
 }
 
 void Arguments::addToAlphabet(string alphabet_str)
@@ -316,101 +358,39 @@ void Arguments::addToPeriods(string period_s)
 		}
 	}
 }
+string Arguments::generateVersionMessage() const
+{
+	ifstream version_file;
+	version_file.open(this->version_file_name.c_str()); // open the file
+	string temp;
+	getline(version_file, temp); // skip the first line
+	getline(version_file, temp); // grab the version
+	
+	version_file.close(); // close the file
+	
+	return temp; // return the version as a string
+}
+string Arguments::generateUsageMessage() const
+{
+	ifstream usage;
+	usage.open(this->usage_file_name.c_str()); // open the file
+	
+	stringstream strm;
+	strm << usage.rdbuf(); // read the file
+
+	usage.close(); // close the file
+	
+	return strm.str(); // return the file as a string
+}
 string Arguments::generateHelpMessage() const
 {
-	return "Find SSRs in FASTA sequence data "
-		""
-		"Input:"
-		"  -b, -bi, -BI, --bzipped2-input"
-		"			Input fasta file is compressed with bzip2. If the file"
-		"			name supplied to '-i' ends in '.bz2', the input is"
-		"			assumed to be compressed with bzip2, regardless of"
-		"			whether you supplied this option or not. If the"
-		"			compressed file is supplied via STDIN, you should (a)"
-		"			use the bzcat utility (part of the bzip2 package) and"
-		"			(b) not use '-b'."
-		"  -g, -gi, -GI, --gzipped-input"
-		"			Input fasta file is gzipped. If the file name supplied"
-		"			to '-i' ends in '.gz', the input is assumed to be"
-		"			gzipped, regardless of whether you supplied this"
-		"			option or not. If the compressed file is supplied via"
-		"			STDIN, you should (a) use the zcat utility (part of"
-		"			the gzip package) and (b) not use '-g'."
-		"  -i in.fasta[.gz|.bz2], --input in.fasta[.gz|.bz2]"
-		"			The input file in fasta format, may be compressed with"
-		"			gzip or bzip2 (see '-g' and '-b'). All sequence"
-		"			characters will be converted to uppercase. [default:"
-		"			stdin]"
-		""
-		"Output:"
-		"  -B, -bo, -BO, --bzip2-output"
-		"			Compress the output file with bzip2. This will *not*"
-		"			automatically add '.bz2' to the end of any file name"
-		"			supplied by '-o'. If the file name supplied to '-o'"
-		"			already ends in '.bz2', the output will be compressed"
-		"			with bzip2, regardless of whether you supplied this"
-		"			option or not. If the '-o' option is not used, use"
-		"			this flag to compress everything sent to stdout with"
-		"			bzip2."
-		"  -G, -go, -GO, --gzip-output"
-		"			Gzip the output file. This will *not* automatically"
-		"			add '.gz' to the end of any file name supplied by"
-		"			'-o'. If the file name supplied to '-o' already ends"
-		"			in '.gz', the output will be gzipped, regardless of"
-		"			whether you supplied this option or not. If the '-o'"
-		"			option is not used, use this flag to gzip everything"
-		"			sent to stdout."
-		"  -o out.tsv[.gz|.bz2], --output out.tsv[.gz|.bz2]"
-		"			The output file in tab-separated value (tsv) format,"
-		"			may be compressed with gzip or bzip2 (see '-G' and"
-		"			'-B'). [default: stdout]"
-		""
-		"Algorithmic:"
-		"  -a a1,..,aN, --alphabet a1,..,aN"
-		"			A comma-separated list of valid, uppercase characters"
-		"			(nucleotides). [default=A,C,G,T]"
-		"  -A, --allow-non-atomic"
-		"			Report non-atomic SSRs (e.g., AT repeated 6 times will"
-		"			also report an ATAT repeated 3 times and an ATATAT"
-		"			repeated 2 times)."
-		"  -e, --exhaustive      Disable all filters and SSR validation to report every"
-		"			SSR. Similar to: -A -r 2 -R <big_number> -n 2 -N"
-		"			<big_number>. This will override any options set for"
-		"			-n, -N, -r, -R, and -s."
-		"  -p p1,..,pN, --periods p1,..,pN"
-		"			A comma-separated list of period sizes (i.e., kmer"
-		"			lengths). Inclusive ranges are also supported using a"
-		"			hyphen. [default=4-6]"
-		"  -n int, --min-nucleotides int"
-		"			Keep only SSRs with total length (number of"
-		"			nucleotides) >= n [default: 2]"
-		"  -N int, --max-nucleotides int"
-		"			Keep only SSRs with total length (number of"
-		"			nucleotides) <= N [default: 10,000]"
-		"  -r int, --min-repeats int"
-		"			Keep only SSRs that repeat >= r times [default: 2]"
-		"  -R int, --max-repeats int"
-		"			Keep only SSRs that repeat <= R times [default:"
-		"			10,000]"
-		"  -s s1,..,sN, --ssrs s1,..,sN"
-		"			A comma-separated list of SSRs to search for; e.g."
-		"			\"AC,GTTA,TTCTG,CCG\" or \"TGA\". Please note that other"
-		"			options may prevent SSRs specified with this option"
-		"			from appearing in the output. For example, if -p is"
-		"			\"4-6\", then an SSR with a repeating \"AC\" will never be"
-		"			displayed because \"AC\" has a period size of 2 (and, as"
-		"			it turns out, 2 is not in the range 4-6)."
-		""
-		"Misc:"
-		"  -d, --disable-progress-bar"
-		"			Disable the progress bar that normally prints to"
-		"			stderr. Will automatically be disabled if (a) reading"
-		"			from stdin or (b) writing to stdout without"
-		"			redirecting it to a file."
-		"  -h, --help            Show this help message and exit"
-		"  -Q int, --max-task-queue-size int"
-		"			[default: 1,000]"
-		"  -t int, --threads int"
-		"			Number of threads [default: 1]"
-		"  -v, --version         Show version number and exit";
+	ifstream help;
+	help.open(this->help_file_name.c_str()); // open the file
+	
+	stringstream strm;
+	strm << help.rdbuf(); // read the file
+
+	help.close(); // close the file
+	
+	return strm.str(); // return the file as a string
 }
