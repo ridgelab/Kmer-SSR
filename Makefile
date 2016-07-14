@@ -58,7 +58,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter
+test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
@@ -66,6 +66,10 @@ test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 test/bin/progressMeter: test/src/progressMeter.cpp obj/ProgressMeter.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/fastaSequences: test/src/fastaSequences.cpp obj/FastaSequences.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test:
 	@valgrind --leak-check=full test/bin/atomicityChecker
 	@valgrind --leak-check=full test/bin/progressMeter
+	@valgrind --leak-check=full test/bin/fastaSequences
