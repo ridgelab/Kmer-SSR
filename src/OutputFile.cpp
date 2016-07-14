@@ -7,6 +7,12 @@
 
 using namespace std;
 
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------     PUBLIC   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
 OutputFile::OutputFile()
 {
 	this->setUp();
@@ -34,21 +40,6 @@ OutputFile::~OutputFile()
 {
 	this->out_file.close();
 }
-void OutputFile::setUp()
-{
-	sem_init(&(this->lock),0,1);
-}
-void OutputFile::setUp(const string &file_name)
-{
-	this->setUp();
-
-	this->out_file.open(file_name.c_str());
-	
-	if (!this->out_file.is_open())
-	{
-		exit(1);
-	}
-}
 void OutputFile::changeFile(const string &file_name)
 {
 	sem_wait(&(this->lock));
@@ -67,31 +58,6 @@ void OutputFile::changeFile(const string &file_name, const vector<string> &heade
 {
 	this->changeFile(file_name);
 	this->writeHeaders(headers);
-}
-void OutputFile::writeHeader(const char* header)
-{
-	sem_wait(&(this->lock));
-	this->out_file << header;
-	sem_post(&(this->lock));
-}
-void OutputFile::writeHeader(const string &header)
-{
-	sem_wait(&(this->lock));
-	this->out_file << header;
-	sem_post(&(this->lock));
-}
-void OutputFile::writeHeaders(const vector<string> &headers)
-{
-	sem_wait(&(this->lock));
-	for (uint32_t i = 0; i < headers.size(); i++)
-	{
-		this->out_file << headers[i];
-		if ( (headers[i].size() > 0) && (headers[i].at(headers[i].size() - 1) != '\n') )
-		{
-			this->out_file << endl;
-		}
-	}
-	sem_post(&(this->lock));
 }
 OutputFile& OutputFile::write(const char* output)
 {
@@ -139,4 +105,51 @@ OutputFile& OutputFile::operator<<(const vector<string> &output)
 OutputFile& OutputFile::operator<<(stringstream &output)
 {
 	return this->write(output);
+}
+
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------    PRIVATE   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
+void OutputFile::setUp()
+{
+	sem_init(&(this->lock),0,1);
+}
+void OutputFile::setUp(const string &file_name)
+{
+	this->setUp();
+
+	this->out_file.open(file_name.c_str());
+	
+	if (!this->out_file.is_open())
+	{
+		exit(1);
+	}
+}
+void OutputFile::writeHeader(const char* header)
+{
+	sem_wait(&(this->lock));
+	this->out_file << header;
+	sem_post(&(this->lock));
+}
+void OutputFile::writeHeader(const string &header)
+{
+	sem_wait(&(this->lock));
+	this->out_file << header;
+	sem_post(&(this->lock));
+}
+void OutputFile::writeHeaders(const vector<string> &headers)
+{
+	sem_wait(&(this->lock));
+	for (uint32_t i = 0; i < headers.size(); i++)
+	{
+		this->out_file << headers[i];
+		if ( (headers[i].size() > 0) && (headers[i].at(headers[i].size() - 1) != '\n') )
+		{
+			this->out_file << endl;
+		}
+	}
+	sem_post(&(this->lock));
 }
