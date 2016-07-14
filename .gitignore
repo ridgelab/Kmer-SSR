@@ -1,2 +1,13 @@
 bin
 obj
+*
+
+!INSTALL
+!LICENSE
+!Makefile
+!README
+!example
+!include
+!lib
+!src
+!test
