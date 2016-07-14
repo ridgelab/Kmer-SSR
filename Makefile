@@ -7,7 +7,7 @@ LIBS?=
 PREFIX=/usr/local/bin
 
 # ------ TARGETS ---------------------
-.PHONY: all prep permissions clean realclean install test-setup test
+.PHONY: all prep permissions clean realclean install test-setup test supertest
 all: prep bin/kmer-ssr permissions test-setup
 
 clean:
@@ -73,6 +73,12 @@ test/bin/outputFile: test/src/outputFile.cpp obj/OutputFile.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
 test:
+	@test/bin/atomicityChecker
+	@test/bin/progressMeter
+	@test/bin/fastaSequences
+	@test/bin/outputFile
+
+supertest:
 	@valgrind --leak-check=full test/bin/atomicityChecker
 	@valgrind --leak-check=full test/bin/progressMeter
 	@valgrind --leak-check=full test/bin/fastaSequences

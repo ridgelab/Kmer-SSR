@@ -3,6 +3,9 @@ obj
 /*
 
 !/.gitignore
+!/.USAGE
+!/.HELP
+!/.VERSION
 !/INSTALL
 !/LICENSE
 !/Makefile
