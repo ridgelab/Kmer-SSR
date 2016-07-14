@@ -196,8 +196,9 @@ int main()
 		
 		//cout << base_ssrs[i] << ": " << ac.isAtomic(base_ssrs[i]) << endl;
 	}
-
-	cout << "AtomicityChecker Passed: " << passed_counter << " / " << base_ssrs.size() << endl;
+	
+	string pass_or_fail_color = passed_counter == base_ssrs.size() ? "\033[0;32m" : "\033[0;31m";
+	cout << "\033[0;34mAtomicityChecker Passed: " << pass_or_fail_color << passed_counter << " / " << base_ssrs.size() << "\033[0m" << endl;
 	
 	//cout << ac.toString() << endl;
 

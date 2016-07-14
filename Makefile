@@ -67,5 +67,5 @@ test/bin/progressMeter: test/src/progressMeter.cpp obj/ProgressMeter.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
 test:
-	@test/bin/atomicityChecker
-	@test/bin/progressMeter
+	@valgrind --leak-check=full test/bin/atomicityChecker
+	@valgrind --leak-check=full test/bin/progressMeter

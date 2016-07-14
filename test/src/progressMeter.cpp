@@ -49,7 +49,7 @@ int main()
 	string response;
 	getline(cin, response);
 	
-	cout << "\nProgressBar Test: ";
+	cout << "\n\033[0;34mProgressBar Test: ";
 
 	if (response.size())
 	{
@@ -59,14 +59,14 @@ int main()
 			{
 				if (toupper(response[i]) == 'N')
 				{
-					cout << "FAIL" << endl;
+					cout << "\033[0;31mFAIL\033[0m" << endl;
 					return 0;
 				}
 			}
 		}
 	}
 
-	cout << "OK" << endl;
+	cout << "\033[0;32mOK\033[0m" << endl;
 
 	return 0;
 }
