@@ -7,6 +7,12 @@
 
 using namespace std;
 
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------     PUBLIC   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
 ProgressMeter::ProgressMeter()
 {
 	this->setUp();
@@ -15,6 +21,37 @@ ProgressMeter::~ProgressMeter()
 {
 	return;
 }
+void ProgressMeter::initialize(uint32_t _data_size)
+{
+	sem_wait(&(this->lock));
+
+	this->data_size = _data_size;
+
+	cerr << "\nFinding SSRs:" << endl;
+
+	sem_post(&(this->lock));
+}
+void ProgressMeter::updateProgress(uint32_t additional_completed, bool update_display)
+{
+	sem_wait(&(this->lock));
+
+	this->data_done += additional_completed;
+	this->progress = (1.0 * this->data_done) / this->data_size;
+
+	if (update_display)
+	{
+		this->updateMeter();
+	}
+	
+	sem_post(&(this->lock));
+}
+
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------    PRIVATE   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
 void ProgressMeter::setUp()
 {
 	this->bar_width = this->calculateWidth() - 7; // 7 because of "[" and "]" and " 100%" (5 chars) at max.  At min, " 4%" (3 chars). In the middle, " 76%" (4 chars).
@@ -67,28 +104,4 @@ void ProgressMeter::updateMeter()
 	//}
 
 	cerr.flush();
-}
-void ProgressMeter::initialize(uint32_t _data_size)
-{
-	sem_wait(&(this->lock));
-
-	this->data_size = _data_size;
-
-	cerr << "\nFinding SSRs:" << endl;
-
-	sem_post(&(this->lock));
-}
-void ProgressMeter::updateProgress(uint32_t additional_completed, bool update_display)
-{
-	sem_wait(&(this->lock));
-
-	this->data_done = this->data_done + additional_completed;
-	this->progress = (1.0 * this->data_done) / this->data_size;
-
-	if (update_display)
-	{
-		this->updateMeter();
-	}
-	
-	sem_post(&(this->lock));
 }

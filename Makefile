@@ -7,8 +7,8 @@ LIBS?=
 PREFIX=/usr/local/bin
 
 # ------ TARGETS ---------------------
-.PHONY: all prep permissions clean realclean install test
-all: prep bin/kmer-ssr permissions
+.PHONY: all prep permissions clean realclean install test-setup test
+all: prep bin/kmer-ssr permissions test-setup
 
 clean:
 	@rm -rf bin/* test/bin/* || true
@@ -58,8 +58,14 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test: test/bin/atomicityChecker
+test-setup: test/bin/atomicityChecker test/bin/progressMeter
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
-	@$@
+
+test/bin/progressMeter: test/src/progressMeter.cpp obj/ProgressMeter.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
+test:
+	@test/bin/atomicityChecker
+	@test/bin/progressMeter

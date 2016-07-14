@@ -7,6 +7,12 @@
 
 using namespace std;
 
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------     PUBLIC   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
 AtomicityChecker::AtomicityChecker()
 {
 	this->setUp();
@@ -38,6 +44,60 @@ AtomicityChecker::~AtomicityChecker()
 	this->factors->clear();
 	delete this->factors;
 }
+bool AtomicityChecker::isAtomic(const string &base_ssr)
+{
+	uint32_t period = base_ssr.size();
+
+	// get the factors (calculate them if necessary)
+	unordered_set<uint32_t>* period_factors = this->calculateFactors(period);
+
+	// check if it's atomic
+	for (unordered_set<uint32_t>::iterator itr = period_factors->begin(); itr != period_factors->end(); ++itr)
+	{
+		if ( (*itr != period) && (!this->checkAtomicityAtFactor(*itr, base_ssr, period)) )
+		{
+			return false; // basically, skip the check if *itr == period. Given that, if it's not atomic, return false
+		}
+	}
+
+	return true;
+}
+string AtomicityChecker::toString() const
+{
+	stringstream strm;
+	strm << "AtomicityChecker: { factors: { ";
+
+	for (unordered_map<uint32_t, unordered_set<uint32_t>*>::iterator itr = this->factors->begin(); itr != this->factors->end(); ++itr)
+	{
+		if (itr != this->factors->begin())
+		{
+			strm << ", ";
+		}
+
+		strm << itr->first << ": { ";
+
+		for (unordered_set<uint32_t>::iterator inner_itr = itr->second->begin(); inner_itr != itr->second->end(); ++inner_itr)
+		{
+			if (inner_itr != itr->second->begin())
+			{
+				strm << ", ";
+			}
+			strm << *inner_itr;
+		}
+
+		strm << " }";
+	}
+
+	strm << " } }";
+	return strm.str();
+}
+
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------    PRIVATE   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
 void AtomicityChecker::setUp()
 {
 	sem_init(&(this->lock),0,1);
@@ -62,7 +122,6 @@ void AtomicityChecker::safeInsert(uint32_t x, unordered_set<uint32_t>* xfactors)
 	{
 		std::pair<uint32_t, unordered_set<uint32_t> * > temp_pair(x, xfactors);
 		this->factors->insert(temp_pair); // add it
-		//this->factors->insert(std::make_pair<uint32_t, unordered_set<uint32_t>*>(x, xfactors)); // add it
 	}
 	else if (this->factors->at(x) != xfactors) // else if x is already in this->factors, but has a different set than xfactors
 	{
@@ -115,51 +174,4 @@ bool AtomicityChecker::checkAtomicityAtFactor(uint32_t factor, const string &bas
 	}
 
 	return count != (period / factor);
-}
-bool AtomicityChecker::isAtomic(const string &base_ssr)
-{
-	uint32_t period = base_ssr.size();
-
-	// get the factors (calculate them if necessary)
-	unordered_set<uint32_t>* period_factors = this->calculateFactors(period);
-
-	// check if it's atomic
-	for (unordered_set<uint32_t>::iterator itr = period_factors->begin(); itr != period_factors->end(); ++itr)
-	{
-		if ( (*itr != period) && (!this->checkAtomicityAtFactor(*itr, base_ssr, period)) )
-		{
-			return false; // basically, skip the check if *itr == period. Given that, if it's not atomic, return false
-		}
-	}
-
-	return true;
-}
-string AtomicityChecker::toString() const
-{
-	stringstream strm;
-	strm << "AtomicityChecker: { factors: { ";
-
-	for (unordered_map<uint32_t, unordered_set<uint32_t>*>::iterator itr = this->factors->begin(); itr != this->factors->end(); ++itr)
-	{
-		if (itr != this->factors->begin())
-		{
-			strm << ", ";
-		}
-
-		strm << itr->first << ": { ";
-
-		for (unordered_set<uint32_t>::iterator inner_itr = itr->second->begin(); inner_itr != itr->second->end(); ++inner_itr)
-		{
-			if (inner_itr != itr->second->begin())
-			{
-				strm << ", ";
-			}
-			strm << *inner_itr;
-		}
-
-		strm << " }";
-	}
-
-	strm << " } }";
-	return strm.str();
 }
