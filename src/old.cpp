@@ -5,6 +5,8 @@
 
 #include "../include/FindSSRs.h"
 
+using namespace std;
+
 static
 uint32_t calculateDataSizeFromFasta(ifstream &fasta);
 
@@ -49,6 +51,11 @@ sem_t* FindSSRs::getLock() const
 }
 uint32_t FindSSRs::getFinishedThreadsCount() const
 {
+	//uint32_t temp;
+	//sem_wait(&(this->d)); // acquire lock for finished threads
+	//temp = this->finished_threads;
+	//sem_post(&(this->d)); // release lock for finished threads
+	//return temp;
 	return this->finished_threads;
 }
 void FindSSRs::incrementFinishedThreads()
@@ -86,6 +93,13 @@ uint32_t FindSSRs::run()
 		//cerr << "Waiting on threads! (" << this->finished_threads << "/" << this->num_threads << ")" << endl;
 		sem_wait(&(this->s)); // wait for signal from a thread
 	}
+	
+	//int nval, eval, dval, sval = 0;
+	//sem_getvalue(&(this->n), &nval);
+	//sem_getvalue(&(this->e), &eval);
+	//sem_getvalue(&(this->d), &dval);
+	//sem_getvalue(&(this->s), &sval);
+	//cerr << "final n,e,d,s: " << nval << "," << eval << "," << dval << "," << sval << endl;
 
 	return 0;
 }

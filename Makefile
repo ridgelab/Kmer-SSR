@@ -32,10 +32,10 @@ obj/AtomicityChecker.o: src/AtomicityChecker.cpp include/AtomicityChecker.h
 obj/FastaSequences.o: src/FastaSequences.cpp include/FastaSequences.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-obj/SingleResult.o: src/SingleResult.cpp include/SingleResult.h
+obj/SSR.o: src/SSR.cpp include/SSR.h include/OutputFile.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-obj/Results.o: src/Results.cpp include/Results.h include/SingleResult.h include/Arguments.h include/OutputFile.h
+obj/SSRcontainer.o: src/SSRcontainer.cpp include/SSRcontainer.h include/SSR.h include/OutputFile.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 obj/FindSSRs.o: src/FindSSRs.cpp include/FindSSRs.h include/Arguments.h include/Results.h include/SingleResult.h include/OutputFile.h include/FastaSequences.h include/AtomicityChecker.h lib/sais-lite-lcp/sais.c
@@ -58,7 +58,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile
+test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
@@ -72,14 +72,24 @@ test/bin/fastaSequences: test/src/fastaSequences.cpp obj/FastaSequences.o
 test/bin/outputFile: test/src/outputFile.cpp obj/OutputFile.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/ssr: test/src/ssr.cpp obj/SSR.o obj/OutputFile.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
+test/bin/ssrContainer: test/src/ssrContainer.cpp obj/SSRcontainer.o obj/SSR.o obj/OutputFile.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test:
 	@test/bin/atomicityChecker
 	@test/bin/progressMeter
 	@test/bin/fastaSequences
 	@test/bin/outputFile
+	@test/bin/ssr
+	@test/bin/ssrContainer
 
 supertest:
 	@valgrind --leak-check=full test/bin/atomicityChecker
 	@valgrind --leak-check=full test/bin/progressMeter
 	@valgrind --leak-check=full test/bin/fastaSequences
 	@valgrind --leak-check=full test/bin/outputFile
+	@valgrind --leak-check=full test/bin/ssr
+	@valgrind --leak-check=full test/bin/ssrContainer

@@ -73,6 +73,7 @@ public:
 	Arguments(int argc, char* argv[]);
 	~Arguments();
 	bool isExhaustive() const;
+	uint32_t getMaxTaskQueueSize() const;
 	uint32_t getMinNucleotideLength() const;
 	uint32_t getMaxNucleotideLength() const;
 	uint32_t getMinRepeats() const;

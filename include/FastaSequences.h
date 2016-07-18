@@ -32,4 +32,5 @@ public:
 	void dryUp();
 	void add(string header, string sequence, uint32_t ignore_chars_offset);
 	uint32_t get(string &header, string &sequence, uint32_t &ignore_chars_offset);
+	uint32_t size() const;
 };

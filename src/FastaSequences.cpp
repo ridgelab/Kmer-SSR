@@ -72,7 +72,11 @@ uint32_t FastaSequences::get(string &header, string &sequence, uint32_t &ignore_
 	}
 	sem_post(&(this->lock));
 	
-	return retval;
+	return retval; // 0 indicates success, 1 indicates failure
+}
+uint32_t FastaSequences::size() const
+{
+	return this->headers.size();
 }
 
 // --------------------------------------------------------------------------- ||

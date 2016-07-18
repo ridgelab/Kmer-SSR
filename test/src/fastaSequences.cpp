@@ -18,8 +18,6 @@ using namespace std;
 int main()
 {
 	FastaSequences fs = FastaSequences();
-
-	cout << "\nThe fastaSequences test has not yet been implemented." << endl;
 	
 	cout << "\n\033[0;34mFastaSequences Test: ";
 
@@ -27,12 +25,14 @@ int main()
 
 	if (pass)
 	{
-		cout << "\033[0;32mOK\033[0m" << endl;
+		cout << "\033[0;32mOK\033[0m";
 	}
 	else
 	{
-		cout << "\033[0;31mFAIL\033[0m" << endl;
+		cout << "\033[0;31mFAIL\033[0m";
 	}
+	
+	cout << " (The fastaSequences test has not yet been implemented)" << endl;
 
 	return 0;
 }

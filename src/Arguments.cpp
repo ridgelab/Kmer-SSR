@@ -42,6 +42,10 @@ bool Arguments::isExhaustive() const
 {
 	return this->exhaustive;
 }
+uint32_t Arguments::getMaxTaskQueueSize() const
+{
+	return this->max_task_queue_size;
+}
 uint32_t Arguments::getMinNucleotideLength() const
 {
 	return this->min_nucleotides;

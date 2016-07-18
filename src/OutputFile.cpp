@@ -59,37 +59,84 @@ void OutputFile::changeFile(const string &file_name, const vector<string> &heade
 	this->changeFile(file_name);
 	this->writeHeaders(headers);
 }
+bool OutputFile::obtainLock(bool block)
+{
+	int ret = 0;
+
+	if (block)
+	{
+		ret = sem_wait(&(this->lock));
+		return ret == 0 ? true : false;
+	}
+
+	ret = sem_trywait(&(this->lock));
+	return ret == 0 ? true : false;
+}
+void OutputFile::unlock()
+{
+	sem_post(&(this->lock));
+}
+OutputFile& OutputFile::write(char output)
+{
+	this->out_file << output;
+	return *this;
+}
+//OutputFile& OutputFile::write(uint32_t output)
+OutputFile& OutputFile::write(unsigned int output)
+{
+	this->out_file << output;
+	return *this;
+}
+OutputFile& OutputFile::write(int output)
+{
+	this->out_file << output;
+	return *this;
+}
+//OutputFile& OutputFile::write(const char output)
+//{
+//	this->out_file << output;
+//	return *this;
+//}
 OutputFile& OutputFile::write(const char* output)
 {
-	sem_wait(&(this->lock));
 	this->out_file << output;
-	sem_post(&(this->lock));
 	return *this;
 }
 OutputFile& OutputFile::write(const string &output)
 {
-	sem_wait(&(this->lock));
 	this->out_file << output;
-	sem_post(&(this->lock));
 	return *this;
 }
 OutputFile& OutputFile::write(const vector<string> &output)
 {
-	sem_wait(&(this->lock));
 	for (uint32_t i = 0; i < output.size(); i++)
 	{
 		this->out_file << output[i];
 	}
-	sem_post(&(this->lock));
 	return *this;
 }
 OutputFile& OutputFile::write(stringstream &output)
 {
-	sem_wait(&(this->lock));
 	this->out_file << output.str();
-	sem_post(&(this->lock));
 	return *this;
 }
+OutputFile& OutputFile::operator<<(char output)
+{
+	return this->write(output);
+}
+OutputFile& OutputFile::operator<<(int output)
+{
+	return this->write(output);
+}
+//OutputFile& OutputFile::operator<<(uint32_t output)
+OutputFile& OutputFile::operator<<(unsigned int output)
+{
+	return this->write(output);
+}
+//OutputFile& OutputFile::operator<<(const char output)
+//{
+//	return this->write(output);
+//}
 OutputFile& OutputFile::operator<<(const char* output)
 {
 	return this->write(output);

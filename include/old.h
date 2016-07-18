@@ -30,6 +30,7 @@ using namespace std;
 class FindSSRs
 {
 private:
+	//Arguments args;
 	Arguments* args;
 	FastaSequences fasta_seqs; // thread-safe data structure
 	vector<pthread_t> threads;
