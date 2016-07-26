@@ -38,6 +38,12 @@ obj/SSR.o: src/SSR.cpp include/SSR.h include/OutputFile.h
 obj/SSRcontainer.o: src/SSRcontainer.cpp include/SSRcontainer.h include/SSR.h include/OutputFile.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+obj/Task.o: src/Task.cpp include/Task.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+obj/TaskQueue.o: src/TaskQueue.cpp include/TaskQueue.h include/Task.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 obj/FindSSRs.o: src/FindSSRs.cpp include/FindSSRs.h include/Arguments.h include/Results.h include/SingleResult.h include/OutputFile.h include/FastaSequences.h include/AtomicityChecker.h lib/sais-lite-lcp/sais.c
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -58,7 +64,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer
+test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
@@ -78,6 +84,12 @@ test/bin/ssr: test/src/ssr.cpp obj/SSR.o obj/OutputFile.o
 test/bin/ssrContainer: test/src/ssrContainer.cpp obj/SSRcontainer.o obj/SSR.o obj/OutputFile.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/task: test/src/task.cpp obj/Task.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
+test/bin/taskQueue: test/src/taskQueue.cpp obj/TaskQueue.o obj/Task.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test:
 	@test/bin/atomicityChecker
 	@test/bin/progressMeter
@@ -85,6 +97,9 @@ test:
 	@test/bin/outputFile
 	@test/bin/ssr
 	@test/bin/ssrContainer
+	@test/bin/task
+	@test/bin/taskQueue
+	@printf "\n"
 
 supertest:
 	@valgrind --leak-check=full test/bin/atomicityChecker
@@ -93,3 +108,6 @@ supertest:
 	@valgrind --leak-check=full test/bin/outputFile
 	@valgrind --leak-check=full test/bin/ssr
 	@valgrind --leak-check=full test/bin/ssrContainer
+	@valgrind --leak-check=full test/bin/task
+	@valgrind --leak-check=full test/bin/taskQueue
+	@printf "\n"
