@@ -29,9 +29,6 @@ obj/OutputFile.o: src/OutputFile.cpp include/OutputFile.h
 obj/AtomicityChecker.o: src/AtomicityChecker.cpp include/AtomicityChecker.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-obj/FastaSequences.o: src/FastaSequences.cpp include/FastaSequences.h
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 obj/SSR.o: src/SSR.cpp include/SSR.h include/OutputFile.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -64,7 +61,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue
+test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
@@ -90,6 +87,9 @@ test/bin/task: test/src/task.cpp obj/Task.o
 test/bin/taskQueue: test/src/taskQueue.cpp obj/TaskQueue.o obj/Task.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/voidPointer: test/src/voidPointer.cpp
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test:
 	@test/bin/atomicityChecker
 	@test/bin/progressMeter
@@ -99,6 +99,7 @@ test:
 	@test/bin/ssrContainer
 	@test/bin/task
 	@test/bin/taskQueue
+	@test/bin/voidPointer
 	@printf "\n"
 
 supertest:
@@ -110,4 +111,5 @@ supertest:
 	@valgrind --leak-check=full test/bin/ssrContainer
 	@valgrind --leak-check=full test/bin/task
 	@valgrind --leak-check=full test/bin/taskQueue
+	@valgrind --leak-check=full test/bin/voidPointer
 	@printf "\n"
