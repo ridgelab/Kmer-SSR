@@ -21,14 +21,16 @@ class TaskQueue
 {
 private:
 	queue<Task*>* tasks;
-	uint32_t max_capacity; // upper size limit on the queue [default: 1,000]
+	//uint32_t max_capacity; // upper size limit on the queue [default: 1,000]
 	sem_t lock;
+	sem_t unfinished_business; // n, the number of tasks still waiting in the queue for analysis
+	sem_t space_available; // e, the space available for the addition of more tasks
 
 public:
 	TaskQueue();
-	TaskQueue(uint32_t size);
+	TaskQueue(uint32_t max_capacity);
 	~TaskQueue();
-	void setUp();
+	void setUp(uint32_t max_capacity);
 	uint32_t size() const;
 	bool empty() const;
 	void add(Task* task);

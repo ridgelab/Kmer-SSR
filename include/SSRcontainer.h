@@ -32,10 +32,12 @@ public:
 	SSRcontainer();
 	~SSRcontainer();
 	uint32_t size() const;
+	bool empty() const;
 	void add(const string &identifier, SSR* ssr);
+	void add(const string &identifier, vector<SSR*>* ssrs_vec);
 	void clear();
 	void writeToFile(ofstream &ofd) const;
-	void writeToFile(OutputFile &ofd) const;
+	void writeToFile(OutputFile &ofd, bool block) const;
 	string toString() const;
 	string toJson() const;
 };

@@ -30,6 +30,8 @@ public:
 	~Task();
 	string getID() const;
 	string getSequence() const;
+	//const string& getSequenceRef() const;
+	uint32_t size() const;
 	uint32_t getGlobalPosition() const;
 	uint32_t getGlobalSequenceLength() const;
 	bool equalTo(Task* other) const;

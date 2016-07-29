@@ -7,23 +7,25 @@
 
 TaskQueue::TaskQueue()
 {
-	this->setUp();
-	this->max_capacity = 1000;
+	this->setUp(1000);
+	//this->max_capacity = 1000;
 }
-TaskQueue::TaskQueue(uint32_t size)
+TaskQueue::TaskQueue(uint32_t max_capacity)
 {
-	this->setUp();
-	this->max_capacity = size;
+	this->setUp(max_capacity);
+	//this->max_capacity = size;
 }
 TaskQueue::~TaskQueue()
 {
 	this->clear();
 	delete this->tasks;
 }
-void TaskQueue::setUp()
+void TaskQueue::setUp(uint32_t max_capacity)
 {
 	this->tasks = new queue<Task*>();
 	sem_init(&(this->lock),0,1);
+	sem_init(&(this->unfinished_business),0,0);
+	sem_init(&(this->space_available),0,max_capacity);
 }
 uint32_t TaskQueue::size() const
 {
@@ -35,16 +37,20 @@ bool TaskQueue::empty() const
 }
 void TaskQueue::add(Task* task)
 {
+	sem_wait(&(this->space_available));
 	sem_wait(&(this->lock));
 	this->tasks->push(task);
 	sem_post(&(this->lock));
+	sem_post(&(this->unfinished_business));
 }
 Task* TaskQueue::get()
 {
+	sem_wait(&(this->unfinished_business));
 	sem_wait(&(this->lock));
 	Task* temp_ptr = this->tasks->front();
 	this->tasks->pop();
 	sem_post(&(this->lock));
+	sem_post(&(this->space_available));
 	return temp_ptr;
 }
 void TaskQueue::clear()
@@ -54,6 +60,9 @@ void TaskQueue::clear()
 	{
 		delete this->tasks->front();
 		this->tasks->pop();
+
+		sem_wait(&(this->unfinished_business)); // this will never block (well, it shouldn't...if it does, that's a logic error)
+		sem_post(&(this->space_available));
 	}
 	sem_post(&(this->lock));
 }

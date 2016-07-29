@@ -18,6 +18,10 @@ uint32_t SSRcontainer::size() const
 {
 	return this->ssrs->size();
 }
+bool SSRcontainer::empty() const
+{
+	return this->ssrs->empty();
+}
 void SSRcontainer::add(const string &identifier, SSR* ssr)
 {
 	if (this->ssrs->count(identifier)) // if the key (and thus the associated vector) already exists in the map
@@ -29,6 +33,27 @@ void SSRcontainer::add(const string &identifier, SSR* ssr)
 		vector<SSR*>* temp_ptr = new vector<SSR*>( { ssr } ); // create the vector
 		std::pair<string, vector<SSR*>*> temp_pair(identifier, temp_ptr); // create the pair
 		this->ssrs->insert(temp_pair); // add the pair to the map
+	}
+}
+void SSRcontainer::add(const string &identifier, vector<SSR*>* ssrs_vec)
+{
+	if (ssrs_vec != nullptr)
+	{
+		if (this->ssrs->count(identifier)) // if the key (and thus the associated vector) already exists in the map
+		{
+			vector<SSR*>* temp_ptr = this->ssrs->at(identifier); // get the vector
+
+			// add each SSR* in ssrs_vec into the vector pointed to by the identifier in the map (this->ssrs)
+			for (uint32_t i = 0; i < ssrs_vec->size(); ++i)
+			{
+				temp_ptr->push_back(ssrs_vec->at(i));
+			}
+		}
+		else // if it doesn't yet exist in the map
+		{
+			std::pair<string, vector<SSR*>*> temp_pair(identifier, ssrs_vec);
+			this->ssrs->insert(temp_pair);
+		}
 	}
 }
 void SSRcontainer::clear()
@@ -60,15 +85,20 @@ void SSRcontainer::writeToFile(ofstream &ofd) const
 		}
 	}
 }
-void SSRcontainer::writeToFile(OutputFile &ofd) const
+void SSRcontainer::writeToFile(OutputFile &ofd, bool block) const
 {
-	for (unordered_map<string, vector<SSR*>*>::iterator itr = this->ssrs->begin(); itr != this->ssrs->end(); ++itr)
+	if (ofd.obtainLock(block))
 	{
-		for (uint32_t i = 0; i < itr->second->size(); ++i)
+		for (unordered_map<string, vector<SSR*>*>::iterator itr = this->ssrs->begin(); itr != this->ssrs->end(); ++itr)
 		{
-			ofd << itr->first << '\t';
-			itr->second->at(i)->writeToFile(ofd);
+			for (uint32_t i = 0; i < itr->second->size(); ++i)
+			{
+				ofd << itr->first << '\t';
+				itr->second->at(i)->writeToFile(ofd);
+			}
 		}
+
+		ofd.unlock();
 	}
 }
 string SSRcontainer::toString() const

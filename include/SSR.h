@@ -30,6 +30,7 @@ public:
 	~SSR();
 	//string* getIDPtr() const;
 	//string getID() const;
+	string getBaseSSR() const;
 	uint32_t getPeriod() const;
 	uint32_t getRepeats() const;
 	uint32_t getStartPosition() const;

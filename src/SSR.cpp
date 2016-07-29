@@ -20,6 +20,10 @@ SSR::~SSR()
 {
 	return;
 }
+string SSR::getBaseSSR() const
+{
+	return this->base_ssr;
+}
 uint32_t SSR::getPeriod() const
 {
 	return this->base_ssr.size();
@@ -46,6 +50,7 @@ void SSR::writeToFile(ofstream &ofd) const
 }
 void SSR::writeToFile(OutputFile &ofd) const
 {
+	// we're assuming a lock for the ofd has already been acquired!
 	ofd << this->base_ssr << '\t' << this->repeats << '\t' << this->position << '\n';
 }
 string SSR::toString() const

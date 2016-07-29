@@ -5,64 +5,82 @@
 
 #include "../include/FindSSRs.h"
 
-static
-uint32_t calculateDataSizeFromFasta(ifstream &fasta);
+static uint32_t calculateDataSizeFromFasta(ifstream &fasta);
+static void* consume(void* consumer_args_vptr);
+static bool isGoodSSR(SSR* ssr, uint32_t global_pos, const vector<bool> &filter, Arguments* args, AtomicityChecker* atomicity_checker);
+static bool keepSSR(SSR* ssr, Arguments* args);
+static vector<SSR*>* findSSRsExhaustively(Task* task);
+static vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* atomicity_checker);
+static vector<SSR*>* findSSRs(Task* task, Arguments* args, AtomicityChecker* atomicity_checker);
 
-FindSSRs::FindSSRs(Arguments* _args) : out_file(_args->getOutFileName())
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------    STRUCTS   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
+struct ConsumerArguments
+{
+	TaskQueue* tasks_ptr;
+	ProgressBar* progress_bar_ptr;
+	OutputFile* ofd_ptr;
+	AtomicityChecker* atomicity_checker_ptr;
+	Arguments* arguments_ptr;
+
+	ConsumerArguments(TaskQueue* _tasks_ptr, ProgressBar* _progress_bar_ptr, OutputFile* _ofd_ptr, AtomicityChecker* _atomicity_checker_ptr, Arguments* _arguments_ptr)
+	{
+		tasks_ptr = _tasks_ptr;
+		progress_bar_ptr = _progress_bar_ptr;
+		ofd_ptr = _ofd_ptr;
+		atomicity_checker_ptr = _atomicity_checker_ptr;
+		arguments_ptr = _arguments_ptr;
+	}
+	~ConsumerArguments()
+	{
+		/*
+		 * 	We are intentionally NOT freeing the memory for the pointers that
+		 * 	make up the members of this struct. The duty to free that memory
+		 * 	will fall upon those who initially created those objects.
+		 */
+		return;
+	}
+};
+
+
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------     PUBLIC   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
+//FindSSRs::FindSSRs(Arguments* _args) : out_file(_args->getOutFileName())
+FindSSRs::FindSSRs(Arguments* _args)
 {
 	this->args = _args;
-	this->num_threads = this->args->getNumThreads();
-	sem_init(&(this->n),0,0);
-	sem_init(&(this->e),0,(this->args->getMaxTaskQueueSize()));
-	sem_init(&(this->d),0,1);
-	sem_init(&(this->s),0,0);
-	sem_init(&(this->lock),0,1);
-	this->finished_threads = 1;
-	
-	this->progress_bar = ProgressMeter();
+	this->out_file = new OutputFile(this->args->getOutFileName());
+	this->progress_bar = new ProgressMeter();
+	this->atomicity_checker = new AtomicityChecker();
+	this->tasks = new TaskQueue(this->args->getMaxTaskQueueSize());
 }
 FindSSRs::~FindSSRs()
 {
-	this->out.close();
-	//sem_destroy(&(this->n));
-	//sem_destroy(&(this->e));
+	delete this->out_file;
+	delete this->progress_bar;
+	delete this->atomicity_checker;
+	delete this->tasks;
 }
-sem_t* FindSSRs::getN() const
-{
-	return (sem_t*) &(this->n);
-}
-sem_t* FindSSRs::getE() const
-{
-	return (sem_t*) &(this->e);
-}
-sem_t* FindSSRs::getD() const
-{
-	return (sem_t*) &(this->d);
-}
-sem_t* FindSSRs::getS() const
-{
-	return (sem_t*) &(this->s);
-}
-sem_t* FindSSRs::getLock() const
-{
-	return (sem_t*) &(this->lock);
-}
-uint32_t FindSSRs::getFinishedThreadsCount() const
-{
-	return this->finished_threads;
-}
-void FindSSRs::incrementFinishedThreads()
-{
-	sem_wait(&(this->d)); // acquire lock for finished threads
-	++this->finished_threads;
-	sem_post(&(this->d)); // release lock for finished threads
-}
+
 uint32_t FindSSRs::run()
 {
+	// set up consumers
 	uint32_t error = this->makeThreads(); // set up consumers
 
-	if (error) { return error; }
+	if (error)
+	{
+		return error;
+	}
 
+	// find the ssrs in the sequences
 	try
 	{
 		this->processInput(); // produce (and consume if only main thread)
@@ -78,31 +96,35 @@ uint32_t FindSSRs::run()
 		return 1;
 	}
 
+	// join threads (if needed)
 	//cerr << "About to start joining threads..." << endl;
-	//this->joinAndForgetAllThreads(); // clean up consumers
-	
-	while (this->finished_threads < this->num_threads)
-	{
-		//cerr << "Waiting on threads! (" << this->finished_threads << "/" << this->num_threads << ")" << endl;
-		sem_wait(&(this->s)); // wait for signal from a thread
-	}
+	this->joinAndForgetAllThreads(); // clean up consumers
 
+	// we're done!
 	return 0;
 }
+
+
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------    PRIVATE   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
+
 uint32_t FindSSRs::makeThreads()
 {
 	pthread_attr_t tattr;
 	pthread_attr_init(&tattr);
-	//pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE); // Maybe omit because this is already default?
-	pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+	pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_JOINABLE);
+	//pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
 	
-	for (uint32_t i = 1; i < this->num_threads; ++i)
+	for (uint32_t i = 1; i < this->args->getNumThreads(); ++i)
 	{
 		pthread_t thread;
 		this->threads.push_back(thread);
 
-		//if ( pthread_create(&thread,NULL,&consume,(void*) this) != 0 )
-		if ( pthread_create(&thread,&tattr,&consume,(void*) this) != 0 )
+		//if ( pthread_create(&thread, NULL, &consume, new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->args)) != 0 )
+		if ( pthread_create(&thread, &tattr, &consume, (void*) new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->args)) != 0 )
 		{
 			perror("creating threads");
 			return errno;
@@ -113,6 +135,7 @@ uint32_t FindSSRs::makeThreads()
 
 	return 0;
 }
+
 void FindSSRs::joinAndForgetAllThreads()
 {
 	for (uint32_t i = 0; i < this->threads.size(); ++i)
@@ -131,197 +154,6 @@ void FindSSRs::joinAndForgetAllThreads()
 	}
 
 	this->threads.clear();
-}
-void FindSSRs::processInput() // produce
-{
-	this->out.open(this->args->getOutFileName().c_str());
-	
-	ifstream species1_in_file;
-	species1_in_file.open(this->args->getInFileName().c_str());
-
-	// init (set the data_size of) the progress bar
-	this->progress_bar.initialize(calculateDataSizeFromFasta(species1_in_file));
-
-	string header = "";
-	string sequence = "";
-	string line = "";
-	while (getline(species1_in_file, line))
-	{
-		if (line.size() > 0)
-		{
-			if (line[0] != '>') // line is a sequence
-			{
-				this->progress_bar.updateProgress(1, false); // +1 for the '\n'
-
-				for (uint32_t i = 0; i < line.size(); ++i)
-				{
-					//sequence = sequence + (char) toupper(line[i]);
-					sequence += (char) toupper(line[i]);
-				}
-			}
-			else // line is a header
-			{
-				this->processSequence(header,sequence);
-
-				header = line.substr(1, string::npos);
-				sequence = "";
-				
-				this->progress_bar.updateProgress(header.size() + 2, false); // +1 for the '\n', +1 for the '>'
-			}
-		}
-		else // empty line
-		{
-			this->progress_bar.updateProgress(1, false); // +1 for the '\n'
-		}
-		
-	}
-	
-	this->processSequence(header,sequence); // catch the last sequence
-
-	species1_in_file.close();
-
-	switch (this->num_threads)
-	{
-		case 1:
-			break;
-		default:
-			this->fasta_seqs.dryUp(); // tell the FastaSequences object it will never recieve more input
-			for (uint32_t i = 1; i < this->num_threads; ++i)
-			{
-				sem_post(&(this->n)); // tell the consumers there's another thing to consume (which will be the stop code), aka, it will return a stop code.
-			}
-			break;
-	}
-
-	header = "";
-	sequence = "";
-	uint32_t offset = 0;
-
-	while (this->fasta_seqs.size() > this->num_threads)
-	{
-		if (this->fasta_seqs.get(header, sequence, offset))
-		{
-			this->findSSRsInSequence(header, sequence, offset);
-		}
-
-	}
-}
-
-void FindSSRs::processSequence(const string &header, string &sequence)
-{
-	if (sequence.size() == 0)
-	{
-		return;
-	}
-	
-	//uint32_t seq_size = sequence.size();
-
-	vector<uint32_t> starts = {0};
-	vector<uint32_t> sizes;
-
-	uint32_t ignored_chars_count = 0;
-	splitStringOnIgnoredChars(starts, sizes, sequence, ignored_chars_count);
-	this->progress_bar.updateProgress(ignored_chars_count, false);
-	
-	for (uint32_t i = 0; i < starts.size(); ++i)
-	{
-		string sub_seq = sequence.substr(starts[i], sizes[i]);
-
-		switch (this->num_threads)
-		{
-			case 1:
-				this->findSSRsInSequence(header, sub_seq, starts[i]);
-				break;
-			default:
-				sem_wait(&(this->e)); // decrease num empty slots
-				this->fasta_seqs.add(header, sub_seq, starts[i]); // fill a slot
-				sem_post(&(this->n)); // increase num occupied slots
-				break;
-		}
-	}
-	
-}
-
-void FindSSRs::findSSRsInSequence(const string &header, const string &sequence, uint32_t ignore_chars_offset)
-{
-	
-	vector<bool> filter(sequence.size(), false);
-	vector<string> base_ssrs;
-	vector<uint32_t> repeats;
-	vector<uint32_t> positions;
-
-	for (set<uint32_t>::iterator itr = this->args->periods->begin(); itr != this->args->periods->end(); ++itr)
-	{
-		// NOTE: "*itr" is the period size
-		
-		for (uint32_t i = 0; i < sequence.size(); ++i)
-		{
-			// helper
-			string base = sequence.substr(i, *itr);
-			string current = string(base);
-			uint32_t count = 0;
-			uint32_t start = i + *itr;
-			while (start < sequence.size() && current == base)
-			{
-				++count;
-				current = sequence.substr(start, *itr);
-				start += *itr;
-			}
-			
-			if (isGood(base, count, ignore_chars_offset + i, filter, ignore_chars_offset))
-			{
-				if ( (count >= this->args->getMinRepeats()) && (count <= this->args->getMaxRepeats()) && (base.size() * count >= this->args->getMinNucleotideLength()) && (base.size() * count <= this->args->getMaxNucleotideLength()) )
-				{
-					base_ssrs.push_back(base);
-					repeats.push_back(count);
-					positions.push_back(ignore_chars_offset + i);
-				}
-
-				for (uint32_t j = i; j < (base.size() * count + i); ++j)
-				{
-					filter[j] = true;
-				}
-				i += ((base.size() * count) - *itr - 1);
-			}
-		}
-	}
-
-
-	sem_wait(&(this->lock));
-	for (uint32_t i = 0; i < base_ssrs.size(); ++i)
-	{
-		out << header << '\t' << base_ssrs[i] << '\t' << repeats[i] << '\t' << positions[i] << '\n';
-	}
-	sem_post(&(this->lock));
-	this->progress_bar.updateProgress(sequence.size(), true);
-}
-
-bool FindSSRs::isGood(const string &base, uint32_t repeats, uint32_t position, const vector<bool> &filter, uint32_t offset)
-{
-	if (!this->args->enumerated_ssrs->empty() && this->args->enumerated_ssrs->count(base) == 0)
-	{
-		return false;
-	}
-
-	if (repeats < 2)
-	{
-		return false;
-	}
-
-	if (!this->atomicity_checker.isAtomic(base))
-	{
-		return false;
-	}
-
-	for (uint32_t i = position - offset; i < (base.size() * repeats + position - offset); ++i)
-	{
-		if (!filter[i])
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void FindSSRs::splitStringOnIgnoredChars(vector<uint32_t> &starts, vector<uint32_t> &sizes, const string &sequence, uint32_t &actually_ignored_chars)
@@ -358,61 +190,159 @@ void FindSSRs::splitStringOnIgnoredChars(vector<uint32_t> &starts, vector<uint32
 		exit(1);
 	}
 }
-void FindSSRs::printExtraInformation(const string &header, const string &sequence, const int *SA, const int *LCP) // not thread safe!!
+
+void FindSSRs::processInput() // produce
 {
-	out_file << "header: " << header << "\n";
-	out_file << "sequence: " << sequence << "\n";
-	out_file << " SA: ";
-	for (uint32_t i = 0; i < sequence.size(); ++i)
+	ifstream fasta_file;
+	fasta_file.open(this->args->getInFileName().c_str());
+
+	// init (set the data_size of) the progress bar
+	this->progress_bar->initialize(calculateDataSizeFromFasta(fasta_file));
+
+	string header = "";
+	string sequence = "";
+	string line = "";
+	while (getline(fasta_file, line))
 	{
-		string temp;
-		stringstream strm;
-		strm << SA[i];
-		strm >> temp;
-		out_file << temp << " ";
-	}
-	out_file << "\nLCP: - ";
-	for (uint32_t i = 1; i < sequence.size(); ++i)
-	{
-		string temp;
-		stringstream strm;
-		strm << LCP[i];
-		strm >> temp;
-		out_file << temp << " ";
-	}
-	out_file << "\n" << "\n";
-}
-void* FindSSRs::consume(void* find_ssrs_vptr) // void* (*)(void* )
-{
-	bool go = true;
-	FindSSRs* find_ssrs_ptr = (FindSSRs*) find_ssrs_vptr;
-	string header;
-	string sequence;
-	uint32_t ignore_chars_offset = 0;
-	while (go)
-	{
-		sem_wait(find_ssrs_ptr->getN()); // decrease num occupied slots
-		if (!find_ssrs_ptr->fasta_seqs.get(header, sequence, ignore_chars_offset)) // take
+		if (line.size())
 		{
-			sem_post(find_ssrs_ptr->getE()); // increase num empty slots
-			find_ssrs_ptr->findSSRsInSequence(header, sequence, ignore_chars_offset); // consume (find the ssrs in the given sequence)
+			if (line[0] != '>') // line is a sequence
+			{
+				this->progress_bar.updateProgress(1, false); // +1 for the '\n'
+
+				for (uint32_t i = 0; i < (line.size() - 1); ++i) // -1 because we don't want to add the '\n' to the sequence
+				{
+					//sequence = sequence + (char) toupper(line[i]);
+					sequence += (char) toupper(line[i]);
+				}
+			}
+			else // line is a header
+			{
+				this->processSequence(header,sequence);
+
+				header = line.substr(1, string::npos);
+				sequence = "";
+				
+				this->progress_bar->updateProgress(header.size() + 2, false); // +1 for the '\n', +1 for the '>'
+			}
 		}
-		else
+		else // empty line
 		{
-			go = false;
+			this->progress_bar->updateProgress(1, false); // +1 for the '\n'
 		}
+		
 	}
 	
-	//cout << "I'm exiting!" << endl;
-	//long* status = 0;
-	//pthread_exit((void*) status);
-	find_ssrs_ptr->incrementFinishedThreads();
-	sem_post(find_ssrs_ptr->getS()); // send a signal to main thread
-	return NULL;
+	this->processSequence(header,sequence); // catch the last sequence
+
+	fasta_file.close(); // close the input file
+
+	// put some NULL tasks in the TaskQueue, signalling the threads they can quit when they encounter one
+	switch (this->args->getNumThreads())
+	{
+		case 1:
+			break;
+		default:
+			for (uint32_t i = 1; i < this->args->getNumThreads(); ++i)
+			{
+				this->tasks->add(nullptr);
+			}
+			break;
+	}
+
+	// if there are plenty of tasks left (more than 2 tasks, excluding the dummy tasks, per thread)
+	if (this->tasks->size() > (this->args->getNumThreads() * 3))
+	{
+		// the main thread becomes a consumer for a while
+		SSRcontainer* ssrs = new SSRcontainer();
+		Task* task = nullptr;
+
+		// but only until each thread will have 2 tasks left (excluding the dummy task)
+		while (this->tasks->size() > (this->args->getNumThreads() * 3))
+		{
+			// get a task
+			task = this->tasks->get(); // get a task
+		
+			// fulfill the task, add the results to the SSRcontainer, attempt to write them to file
+			ssrs->add(task->getID(), findSSRs(task, this->args, this->atomicity_checker));
+			ssrs->writeTofile(this->out_file, false); // false means it won't block if it can't write
+		
+			// let the user know we've made some progress
+			progress_bar->updateProgress(task->size(), true);
+
+			// delete the ask now that we've completed it
+			delete task;
+		}
+
+		// if we didn't write everything, let's do it now
+		if (!ssrs->empty())
+		{
+			ssrs->writeToFile(ofd, true); // true means it will block until it can write
+		}
+
+		delete ssrs;
+	}
+}
+
+void FindSSRs::processSequence(const string &header, const string &sequence)
+{
+	if (sequence.size() == 0)
+	{
+		return;
+	}
+	
+	vector<uint32_t> starts = {0};
+	vector<uint32_t> sizes;
+	uint32_t ignored_chars_count = 0;
+
+	splitStringOnIgnoredChars(starts, sizes, sequence, ignored_chars_count);
+
+	this->progress_bar->updateProgress(ignored_chars_count, false); // false means don't update the display
+
+	switch (this->args->getNumThreads())
+	{
+		case 1:
+			SSRcontainer* ssrs = new SSRcontainer();
+			Task* task = nullptr;
+
+			for (uint32_t i = 0; i < starts.size(); ++i)
+			{
+				// create the task
+				task = new Task(header, sub_seq, starts[i], sequence.size());
+				
+				// fulfill the task, add the results to the SSRcontainer so we can write them to file
+				ssrs->add(task->getID(), findSSRs(task, this->args, this->atomicity_checker));
+				ssrs->writeTofile(this->out_file, true); // true means it will block if it can't write (it will always be able to write bcuz it has no competition)
+				
+				// let the user know we've made some progress
+				progress_bar->updateProgress(task->size(), true);
+			
+				// delete the ask now that we've completed it
+				delete task;
+			}
+
+			delete ssrs;
+
+			break;
+		
+		default:
+			for (uint32_t i = 0; i < starts.size(); ++i)
+			{
+				// add a new task to the TaskQueue (so another thread can process it)
+				this->tasks->add(new Task(header, sequence.substr(starts[i], sizes[i]), starts[i], sequence.size()));
+			}
+			
+			break;
+	}
 }
 
 
-// --------------- STATIC FUNCTIONS ------------------------------ ||
+
+// --------------------------------------------------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------     STATIC   ----------------------------------- ||
+// --------------------------              ----------------------------------- ||
+// --------------------------------------------------------------------------- ||
 
 static
 uint32_t calculateDataSizeFromFasta(ifstream &fasta)
@@ -424,3 +354,188 @@ uint32_t calculateDataSizeFromFasta(ifstream &fasta)
 	return size; // return the size
 }
 
+static
+void* consume(void* consumer_args_vptr)
+{
+	// cast void pointer to correct pointer type
+	ConsumerArguments* consumer_args = (ConsumerArguments*) consumer_args_vptr;
+
+	// Extract the arguments out of the struct
+	TaskQueue* tasks = consumer_args->tasks_ptr;
+	ProgressBar* progress_bar = consumer_args->progress_bar_ptr;
+	OutputFile* ofd = consumer_args->ofd_ptr;
+	AtomicityChecker* atomicity_checker = consumer_args->atomicity_checker_ptr;
+	Arguments* args = consumer_args->arguments_ptr;
+
+	// create a container for ssrs
+	SSRcontainer* ssrs = new SSRcontainer();
+	Task* task = nullptr;
+
+	// while we have work to do
+	while true
+	{
+		// get a task to perform
+		task = tasks->get();
+	
+		// if the task is NULL, it's a signal that we're all done here
+		if (task == nullptr)
+		{
+			break; // stop working because there isn't any work left to do
+		}
+
+		// add the ssrs to the container and *attempt* to write all ssrs in the container to file
+		ssrs->add(task->getID(), findSSRs(task, args, atomicity_checker));
+		ssrs->writeTofile(ofd, false); // false means it won't block if it can't write
+
+		// update the progress bar with the work done
+		progress_bar->updateProgress(task->size(), true);
+
+		delete task;
+	}
+
+	// if we haven't printed out all the ssrs yet, do it
+	if (!ssrs->empty())
+	{
+		ssrs->writeToFile(ofd, true); // true means it will block until it can write
+	}
+
+	// delete the arguments pointer and the SSRcontainer
+	delete consumer_args;
+	delete ssrs;
+}
+
+static
+SSR* seekSinglePeriodSizeSSRatIndex(const string &sequence, uint32_t index, uint32_t global_pos, uint32_t period)
+{
+	string base = sequence.substr(index : period);
+	string next = current;
+	uint32_t repeats = 0;
+	uint32_t pos = index + period;
+	while (base == next)
+	{
+		++repeats;
+		next = sequence.substr(pos : period);
+		pos += period;
+	}
+
+	return new SSR(base, repeats, index + global_pos);
+}
+
+static
+bool isGoodSSR(SSR* ssr, uint32_t global_pos, const vector<bool> &filter, Arguments* args, AtomicityChecker* atomicity_checker)
+{
+	// check enumerated SSRs
+	if (args->ssrs->size() && !args->ssrs->count(ssr->getBaseSSR()))
+	{
+		return false; // the user enumerated SSRs and this one wasn't one of them
+	}
+
+	// check the number of repeats
+	if (ssr->getRepeats() < 2)
+	{
+		return false; // this ssr doesn't repeat, making it not an ssr
+	}
+
+	// check atomicity
+	if (!args->allowNonAtomic() && !atomicity_checker->isAtomic(ssr->getBaseSSR()))
+	{
+		return false; // this SSR was not atomic (e.g., ATAT instead of AT)
+	}
+
+	// check overlap of entire SSR
+	for (uint32_t i = ssr->getStartPosition - global_pos; i < ssr->getExclusiveEndPosition() - global_pos; ++i)
+	{
+		if (!filter[i])
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static
+bool keepSSR(SSR* ssr, Arguments* args)
+{
+	// check the number of repeats
+	if ( (ssr->getRepeats() < args->getMinRepeats()) || (ssr->getRepeats() > args->getMaxRepeats()) )
+	{
+		return false;
+	}
+
+	// check the entire ssr length
+	if ( (ssr->getLength() < args->getMinNucleotideLength()) || (ssr->getLength() > args->getMaxNucleotideLength()) )
+	{
+		return false;
+	}
+
+	return true;
+}
+
+static
+vector<SSR*>* findSSRsExhaustively(Task* task)
+{
+	vector<SSR*>* ssrs = new vector<SSR*>();
+
+	string seq = task->getSequence();
+	vector<uint32_t> periods = task->getPeriods();
+
+	for (uint32_t i = 0; i < periods.size(); ++i)
+	{
+		for (uint32_t index = 0; index < task->size(); ++index)
+		{
+			//ssrs.push_back(seekSinglePeriodSizeSSRatIndex(task->getSequenceRef(), index, task->getGlobalPosition(), periods[i]));
+			ssrs->push_back(seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]));
+		}
+	}
+
+	return ssrs;
+}
+
+static
+vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* atomicity_checker)
+{
+	vector<bool>* filter = new vector<bool>(task->size(), false);
+
+	vector<SSR*>* ssrs = new vector<SSR*>();
+
+	string seq = task->getSequence();
+	vector<uint32_t> periods = task->getPeriods();
+	SSR* ssr = nullptr;
+	
+	for (uint32_t i = 0; i < periods.size(); ++i)
+	{
+		for (uint32_t index = 0; index < task->size(); ++index)
+		{
+			ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]);
+
+			if (this->isGoodSSR(ssr, task->getGlobalPosition(), *filter))
+			{
+				if (this->keepSSR(ssr))
+				{
+					ssrs->push_back(ssr);
+				}
+
+				for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j)
+				{
+					filter->at(j) = true;
+				}
+
+				index += (ssr->getLength() - periods[i] - 1);
+			}
+		}
+	}
+
+	return ssrs;
+}
+
+static
+vector<SSR*>* findSSRs(Task* task, Arguments* args, AtomicityChecker* atomicity_checker)
+{
+	if (args->doExhaustiveSearch())
+	{
+		return findSSRsExhaustively(task);
+	}
+
+	return findSSRsNormally(task, args, atomicity_checker);
+}

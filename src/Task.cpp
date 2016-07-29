@@ -37,6 +37,14 @@ string Task::getSequence() const
 {
 	return this->sequence;
 }
+//const string& Task::getSequenceRef() const
+//{
+//	return &(this->sequence);
+//}
+uint32_t Task::size() const
+{
+	return this->sequence.size();
+}
 uint32_t Task::getGlobalPosition() const
 {
 	return this->global_pos;
