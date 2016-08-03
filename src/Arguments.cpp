@@ -19,6 +19,17 @@ Arguments::Arguments(int argc, char* argv[])
 	this->usage_file_name = "../.USAGE";
 	this->help_file_name = "../.HELP";
 
+	this->input_file_name = "/dev/stdin";
+	this->output_file_name = "/dev/stdout";
+
+	this->allow_non_atomic = false;
+	this->display_progress_bar = true;
+
+	this->bzipped2_input = false;
+	this->bzipped2_output = false;
+	this->gzipped_input = false;
+	this->gzipped_output = false;
+
 	this->alphabet = new unordered_set<char>();
 	this->periods = new set<uint32_t, bool(*)(uint32_t,uint32_t)>(reverseOrderPointer);
 	this->enumerated_ssrs = new unordered_set<string>();
@@ -38,9 +49,25 @@ Arguments::~Arguments()
 }
 
 // public
+bool Arguments::helpOrVersionDisplayed() const
+{
+	return this->help_or_version_displayed;
+}
 bool Arguments::isExhaustive() const
 {
 	return this->exhaustive;
+}
+bool Arguments::doExhaustiveSearch() const
+{
+	return this->exhaustive;
+}
+bool Arguments::allowNonAtomic() const
+{
+	return this->allow_non_atomic;
+}
+bool Arguments::displayProgressBar() const
+{
+	return this->display_progress_bar;
 }
 uint32_t Arguments::getMaxTaskQueueSize() const
 {
@@ -83,6 +110,18 @@ unordered_set<char>* Arguments::getAlphabet() const
 {
 	return this->alphabet;
 }
+bool Arguments::inAlphabet(const char c) const
+{
+	return this->alphabet->count(c) ? true : false;
+}
+bool Arguments::inPeriods(uint32_t p) const
+{
+	return this->periods->count(p) ? true : false;
+}
+set<uint32_t, bool (*)(uint32_t, uint32_t)>* Arguments::getPeriods() const
+{
+	return this->periods;
+}
 string Arguments::getInFileName() const
 {
 	return this->input_file_name;
@@ -90,6 +129,14 @@ string Arguments::getInFileName() const
 string Arguments::getOutFileName() const
 {
 	return this->output_file_name;
+}
+bool Arguments::baseSSRinEnumeratedSSRs(string base_ssr) const
+{
+	return this->enumerated_ssrs->count(base_ssr) ? true : false;
+}
+bool Arguments::areEnumeratedSSRs() const
+{
+	return !this->enumerated_ssrs->empty();
 }
 
 
@@ -127,7 +174,7 @@ void Arguments::processArgs(int argc, char* argv[])
 	
 	int c;
 
-	while ( (c = getopt(argc,argv,"a:AbBdegGhi:n:N:o:p:Q:r:R:s:t:v")) != -1 )
+	while ( (c = getopt(argc,argv,"a:AbBdegGhH:i:n:N:o:p:Q:r:R:s:t:U:vV:")) != -1 )
 	{
 		switch (c)
 		{
@@ -140,7 +187,9 @@ void Arguments::processArgs(int argc, char* argv[])
 			case 'g': this->gzipped_input = true; break;
 			case 'G': this->gzipped_output = true; break;
 			case 'h':
-				cerr << this->usage_message << endl << endl << this->help_message << endl << endl; break;
+				this->help_or_version_displayed = true;
+				cerr << this->usage_message << endl << endl << this->help_message << endl << endl;
+				break;
 			case 'H': this->help_file_name = optarg; break;
 			case 'i': this->input_file_name = optarg; break;
 			case 'n': min_nucleotides_str = optarg; break;
@@ -152,9 +201,11 @@ void Arguments::processArgs(int argc, char* argv[])
 			case 'R': max_repeats_str = optarg; break;
 			case 's': enumerated_ssrs_str = optarg; break;
 			case 't': threads_str = optarg; break;
-			case 'u': this->usage_file_name = optarg; break;
+			case 'U': this->usage_file_name = optarg; break;
 			case 'v':
-				cerr << "Version: " << this->version << endl; break;
+				this->help_or_version_displayed = true;
+				cerr << "Version: " << this->version << endl;
+				break;
 			case 'V': this->version_file_name = optarg; break;
 			case '?':
 				if (optopt == 'c')
@@ -203,6 +254,9 @@ void Arguments::processArgs(int argc, char* argv[])
 	this->addToEnumeratedSSRs(enumerated_ssrs_str);
 	this->addToPeriods(period_s);
 
+	// sanity check
+	this->sanityCheckArguments();
+
 	this->autoDetectCompressedInput();
 	this->autoDetectCompressedOutput();
 
@@ -237,6 +291,19 @@ void Arguments::autoDetectCompressedOutput()
 	if (this->bzipped2_output && this->gzipped_output)
 	{
 		throw "ERROR: Your output cannot be compressed with both gzip and bzip2.";
+	}
+}
+
+void Arguments::sanityCheckArguments() const
+{
+	if (this->min_nucleotides > this->max_nucleotides)
+	{
+		throw "ERROR: -n must not be > than -N";
+	}
+	
+	if (this->min_repeats > this->max_repeats)
+	{
+		throw "ERROR: -r must not be > than -R";
 	}
 }
 
@@ -362,6 +429,15 @@ void Arguments::addToPeriods(string period_s)
 		}
 	}
 }
+string Arguments::generateStringFromFile(const string &fn) const
+{
+	ifstream fd;
+	fd.open(fn.c_str()); // open the file
+	stringstream strm;
+	strm << fd.rdbuf(); // read the file
+	fd.close(); // close the file
+	return strm.str(); // return the file as a string
+}
 string Arguments::generateVersionMessage() const
 {
 	ifstream version_file;
@@ -376,25 +452,9 @@ string Arguments::generateVersionMessage() const
 }
 string Arguments::generateUsageMessage() const
 {
-	ifstream usage;
-	usage.open(this->usage_file_name.c_str()); // open the file
-	
-	stringstream strm;
-	strm << usage.rdbuf(); // read the file
-
-	usage.close(); // close the file
-	
-	return strm.str(); // return the file as a string
+	return this->generateStringFromFile(this->usage_file_name);
 }
 string Arguments::generateHelpMessage() const
 {
-	ifstream help;
-	help.open(this->help_file_name.c_str()); // open the file
-	
-	stringstream strm;
-	strm << help.rdbuf(); // read the file
-
-	help.close(); // close the file
-	
-	return strm.str(); // return the file as a string
+	return this->generateStringFromFile(this->help_file_name);
 }

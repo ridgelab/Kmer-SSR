@@ -61,7 +61,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer
+test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
@@ -90,6 +90,9 @@ test/bin/taskQueue: test/src/taskQueue.cpp obj/TaskQueue.o obj/Task.o
 test/bin/voidPointer: test/src/voidPointer.cpp
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/arguments: test/src/arguments.cpp obj/Arguments.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test:
 	@test/bin/atomicityChecker
 	@test/bin/progressMeter
@@ -100,6 +103,7 @@ test:
 	@test/bin/task
 	@test/bin/taskQueue
 	@test/bin/voidPointer
+	@test/bin/arguments
 	@printf "\n"
 
 supertest:
@@ -112,4 +116,5 @@ supertest:
 	@valgrind --leak-check=full test/bin/task
 	@valgrind --leak-check=full test/bin/taskQueue
 	@valgrind --leak-check=full test/bin/voidPointer
+	@valgrind --leak-check=full test/bin/arguments
 	@printf "\n"

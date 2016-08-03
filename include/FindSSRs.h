@@ -8,7 +8,6 @@
 #include <iostream>
 #include <cstdio>
 #include <cstddef> // nullptr
-#include <cstddef> // uint32_t
 #include <unistd.h>
 #include <sys/types.h>
 #include <fstream> // ifstream,ofstream

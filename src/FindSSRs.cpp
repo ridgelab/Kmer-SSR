@@ -160,7 +160,8 @@ void FindSSRs::splitStringOnIgnoredChars(vector<uint32_t> &starts, vector<uint32
 {
 	for (uint32_t i = 0; i < sequence.size(); ++i)
 	{
-		if (!this->args->alphabet->count(sequence[i])) // if it's a "bad" character
+		//if (!this->args->alphabet->count(sequence[i])) // if it's a "bad" character
+		if (!this->args->inAlphabet(sequence[i])) // it it's a "bad" character
 		{
 			sizes.push_back(i - starts[starts.size() - 1]);
 			++actually_ignored_chars;
@@ -425,7 +426,8 @@ static
 bool isGoodSSR(SSR* ssr, uint32_t global_pos, const vector<bool> &filter, Arguments* args, AtomicityChecker* atomicity_checker)
 {
 	// check enumerated SSRs
-	if (args->ssrs->size() && !args->ssrs->count(ssr->getBaseSSR()))
+	//if (args->ssrs->size() && !args->ssrs->count(ssr->getBaseSSR()))
+	if (args->areEnumeratedSSRs() && !args->baseSSRinEnumeratedSSRs(ssr->getBaseSSR()))
 	{
 		return false; // the user enumerated SSRs and this one wasn't one of them
 	}

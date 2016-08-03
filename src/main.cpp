@@ -22,8 +22,11 @@ int main(int argc, char* argv[])
 	{
 		args = new Arguments(argc, argv);
 
-		FindSSRs find_ssrs(args);
-		ret_val = find_ssrs.run();
+		if(!args->helpOrVersionDisplayed())
+		{
+			FindSSRs find_ssrs(args);
+			ret_val = find_ssrs.run();
+		}
 	}
 	catch (string error)
 	{
