@@ -24,11 +24,16 @@ Arguments::Arguments(int argc, char* argv[])
 
 	this->allow_non_atomic = false;
 	this->display_progress_bar = true;
+	this->exhaustive = false;
 
 	this->bzipped2_input = false;
 	this->bzipped2_output = false;
 	this->gzipped_input = false;
 	this->gzipped_output = false;
+
+	this->threads = 1;
+
+	this->help_or_version_displayed = false;
 
 	this->alphabet = new unordered_set<char>();
 	this->periods = new set<uint32_t, bool(*)(uint32_t,uint32_t)>(reverseOrderPointer);
@@ -165,7 +170,7 @@ void Arguments::processArgs(int argc, char* argv[])
 	string alphabet_str = "A,C,G,T";         // -a:
 	string min_nucleotides_str = "2";        // -n:
 	string max_nucleotides_str = "10000";    // -N:
-	string period_s = "4-6";              // -p:
+	string period_s = "4-6";                 // -p:
 	string max_task_queue_size_str = "1000"; // -Q:
 	string min_repeats_str = "2";            // -r:
 	string max_repeats_str = "1000";         // -R:
@@ -174,55 +179,59 @@ void Arguments::processArgs(int argc, char* argv[])
 	
 	int c;
 
-	while ( (c = getopt(argc,argv,"a:AbBdegGhH:i:n:N:o:p:Q:r:R:s:t:U:vV:")) != -1 )
+	if (argc > 1)
 	{
-		switch (c)
+		while ( (c = getopt(argc,argv,"a:AbBdegGhH:i:n:N:o:p:Q:r:R:s:t:U:vV:")) != -1 )
 		{
-			case 'a': alphabet_str = optarg; break;
-			case 'A': this->allow_non_atomic = true; break;
-			case 'b': this->bzipped2_input = true; break;
-			case 'B': this->bzipped2_output = true; break;
-			case 'd': this->display_progress_bar = false; break;
-			case 'e': this->exhaustive = true; break;
-			case 'g': this->gzipped_input = true; break;
-			case 'G': this->gzipped_output = true; break;
-			case 'h':
-				this->help_or_version_displayed = true;
-				cerr << this->usage_message << endl << endl << this->help_message << endl << endl;
-				break;
-			case 'H': this->help_file_name = optarg; break;
-			case 'i': this->input_file_name = optarg; break;
-			case 'n': min_nucleotides_str = optarg; break;
-			case 'N': max_nucleotides_str = optarg; break;
-			case 'o': this->output_file_name = optarg; break;
-			case 'p': period_s = optarg; break;
-			case 'Q': max_task_queue_size_str = optarg; break;
-			case 'r': min_repeats_str = optarg; break;
-			case 'R': max_repeats_str = optarg; break;
-			case 's': enumerated_ssrs_str = optarg; break;
-			case 't': threads_str = optarg; break;
-			case 'U': this->usage_file_name = optarg; break;
-			case 'v':
-				this->help_or_version_displayed = true;
-				cerr << "Version: " << this->version << endl;
-				break;
-			case 'V': this->version_file_name = optarg; break;
-			case '?':
-				if (optopt == 'c')
-				{
-					fprintf(stderr,"Option -%c requires an argument.\n",optopt);
-				}
-				else if (isprint(optopt))
-				{
-					fprintf(stderr,"Unknown option `-%c'.\n",optopt);
-				}
-				else
-				{
-					fprintf(stderr,"Unknown option character `\\x%x'.\n",optopt);
-				}
-				return;
-			default:
-				abort();
+			switch (c)
+			{
+				case 'a': alphabet_str = optarg; break;
+				case 'A': this->allow_non_atomic = true; break;
+				case 'b': this->bzipped2_input = true; break;
+				case 'B': this->bzipped2_output = true; break;
+				case 'd': this->display_progress_bar = false; break;
+				case 'e': this->exhaustive = true; break;
+				case 'g': this->gzipped_input = true; break;
+				case 'G': this->gzipped_output = true; break;
+				case 'h':
+					this->help_or_version_displayed = true;
+					cerr << this->usage_message << endl << endl << this->help_message << endl << endl;
+					break;
+				case 'H': this->help_file_name = optarg; break;
+				case 'i': this->input_file_name = optarg; break;
+				case 'n': min_nucleotides_str = optarg; break;
+				case 'N': max_nucleotides_str = optarg; break;
+				case 'o': this->output_file_name = optarg; break;
+				case 'p': period_s = optarg; break;
+				case 'Q': max_task_queue_size_str = optarg; break;
+				case 'r': min_repeats_str = optarg; break;
+				case 'R': max_repeats_str = optarg; break;
+				case 's': enumerated_ssrs_str = optarg; break;
+				case 't': threads_str = optarg; break;
+				case 'U': this->usage_file_name = optarg; break;
+				case 'v':
+					this->help_or_version_displayed = true;
+					cerr << "Version: " << this->version << endl;
+					break;
+				case 'V': this->version_file_name = optarg; break;
+				case '?':
+					if (optopt == 'c')
+					{
+						fprintf(stderr,"Option -%c requires an argument.\n",optopt);
+					}
+					else if (isprint(optopt))
+					{
+						fprintf(stderr,"Unknown option `-%c'.\n",optopt);
+					}
+					else
+					{
+						fprintf(stderr,"Unknown option character `\\x%x'.\n",optopt);
+					}
+					return;
+				default:
+					cout << "abort, c: " << (char) c << endl;
+					abort();
+			}
 		}
 	}
 	
@@ -259,7 +268,6 @@ void Arguments::processArgs(int argc, char* argv[])
 
 	this->autoDetectCompressedInput();
 	this->autoDetectCompressedOutput();
-
 }
 
 void Arguments::autoDetectCompressedInput()
