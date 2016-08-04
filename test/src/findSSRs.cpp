@@ -16,7 +16,6 @@
 
 using namespace std;
 
-bool actualOutputMatchedExpected(const string &actual_fn, const string &expected_fn);
 bool test1();
 //bool test2();
 //bool test3();
@@ -54,11 +53,56 @@ int main()
 	return ret_val;
 }
 
+void fillSSRSetFromFile(const string &fn, set<string>* ssrs)
+{
+	ifstream fd;
+	fd.open(fn.c_str());
+
+	string line;
+	getline(fd, line); // skip past the header line
+	while(getline(fd, line))
+	{
+		ssrs->insert(line);
+	}
+
+	fd.close();
+}
+
 bool actualOutputMatchedExpected(const string &actual_fn, const string &expected_fn)
 {
-	// sort each file
-	// run diff
-	// check diff results
+	bool ret_val = true;
+	
+	set<string>* actual = new set<string>();
+	set<string>* expected = new set<string>();
+	
+	fillSSRSetFromFile(actual_fn, actual);
+	fillSSRSetFromFile(expected_fn, expected);
+
+	if (actual->size() != expected->size())
+	{
+		ret_val = false;
+	}
+	else
+	{
+		set<string>::iterator a_itr = actual->begin();
+		set<string>::iterator e_itr = expected->begin();
+		while (e_itr != expected->end() && a_itr != actual->end()) // expected.size() == actual.size()
+		{
+			if (*e_itr != *a_itr)
+			{
+				ret_val = false;
+				break;
+			}
+
+			++e_itr;
+			++a_itr;
+		}
+	}
+
+	delete actual;
+	delete expected;
+
+	return ret_val;
 }
 
 bool test1()
@@ -69,26 +113,30 @@ bool test1()
 
 	try
 	{
-		int argc = 6;
+			//(char*)("-e"),
+		int argc = 8;
 		char* argv[] = {
 			(char*)("test1"),
 			(char*)("-d"),
 			(char*)("-i"),
 			(char*)("test/input/1.fasta"),
 			(char*)("-o"),
-			(char*)("test/output/actual/1.tsv")
+			(char*)("test/output/actual/1.tsv"),
+			(char*)("-p"),
+			(char*)("2-3")
 		};
 
 		args = new Arguments(argc, argv);
 
 		if (!args->helpOrVersionDisplayed())
 		{
-			FindSSRs find_ssrs(args);
-			ret_val = find_ssrs.run() == 0 ? true : false;
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
 
 			if (ret_val)
 			{
-				ret_val = actualOutputMatchedExpected();
+				ret_val = actualOutputMatchedExpected("test/output/actual/1.tsv", "test/output/expected/1.tsv");
 			}
 		}
 	}

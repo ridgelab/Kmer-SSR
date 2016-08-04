@@ -58,6 +58,7 @@ FindSSRs::FindSSRs(Arguments* _args)
 {
 	this->args = _args;
 	this->out_file = new OutputFile(this->args->getOutFileName());
+	this->out_file->write("#Sequence_Name\tSSR\tRepeats\tPosition\n");
 	this->progress_bar = new ProgressMeter(this->args->displayProgressBar());
 	this->atomicity_checker = new AtomicityChecker();
 	this->tasks = new TaskQueue(this->args->getMaxTaskQueueSize());
@@ -161,7 +162,7 @@ void FindSSRs::splitStringOnIgnoredChars(vector<uint32_t> &starts, vector<uint32
 	for (uint32_t i = 0; i < sequence.size(); ++i)
 	{
 		//if (!this->args->alphabet->count(sequence[i])) // if it's a "bad" character
-		if (!this->args->inAlphabet(sequence[i])) // it it's a "bad" character
+		if (!this->args->inAlphabet(sequence[i])) // if it's a "bad" character
 		{
 			sizes.push_back(i - starts[starts.size() - 1]);
 			++actually_ignored_chars;
@@ -211,7 +212,7 @@ void FindSSRs::processInput() // produce
 			{
 				this->progress_bar->updateProgress(1, false); // +1 for the '\n'
 
-				for (uint32_t i = 0; i < (line.size() - 1); ++i) // -1 because we don't want to add the '\n' to the sequence
+				for (uint32_t i = 0; i < line.size(); ++i) // -1 because we don't want to add the '\n' to the sequence
 				{
 					//sequence = sequence + (char) toupper(line[i]);
 					sequence += (char) toupper(line[i]);
@@ -416,13 +417,13 @@ SSR* seekSinglePeriodSizeSSRatIndex(const string &sequence, uint32_t index, uint
 	string base = sequence.substr(index, period);
 	string next = base;
 	uint32_t repeats = 0;
-	uint32_t pos = index + period;
-	
+	uint32_t pos = index;
+
 	while ( (base == next) && (pos < (sequence.size() - period + 1)) )
 	{
 		++repeats;
-		next = sequence.substr(pos,  period);
 		pos += period;
+		next = sequence.substr(pos,  period);
 	}
 
 	return new SSR(base, repeats, index + global_pos);
