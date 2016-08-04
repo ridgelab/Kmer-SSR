@@ -25,7 +25,7 @@ int main()
 	const bool UPDATE_DISPLAY = true;
 	const bool DO_NOT_UPDATE_DISPLAY = false;
 	
-	ProgressMeter pm = ProgressMeter();
+	ProgressMeter pm = ProgressMeter(true); // true means we're going to not completely disable the progress bar from working at all
 
 	pm.initialize(DATA_SIZE);
 	pm.updateProgress(0, UPDATE_DISPLAY);

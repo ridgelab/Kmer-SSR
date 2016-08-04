@@ -13,8 +13,9 @@ using namespace std;
 // --------------------------              ----------------------------------- ||
 // --------------------------------------------------------------------------- ||
 
-ProgressMeter::ProgressMeter()
+ProgressMeter::ProgressMeter(bool _display)
 {
+	this->display = _display;
 	this->setUp();
 }
 ProgressMeter::~ProgressMeter()
@@ -27,7 +28,10 @@ void ProgressMeter::initialize(uint32_t _data_size)
 
 	this->data_size = _data_size;
 
-	cerr << "\nFinding SSRs:" << endl;
+	if (this->display)
+	{
+		cerr << "\nFinding SSRs:" << endl;
+	}
 
 	sem_post(&(this->lock));
 }
@@ -38,7 +42,7 @@ void ProgressMeter::updateProgress(uint32_t additional_completed, bool update_di
 	this->data_done += additional_completed;
 	this->progress = (1.0 * this->data_done) / this->data_size;
 
-	if (update_display)
+	if (this->display && update_display)
 	{
 		this->updateMeter();
 	}

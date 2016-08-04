@@ -38,6 +38,7 @@ public:
 	void clear();
 	void writeToFile(ofstream &ofd) const;
 	void writeToFile(OutputFile &ofd, bool block) const;
+	void writeToFile(OutputFile* ofd, bool block) const;
 	string toString() const;
 	string toJson() const;
 };

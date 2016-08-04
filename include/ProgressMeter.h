@@ -21,6 +21,7 @@ private:
 	uint32_t data_size;
 	float progress;
 	sem_t lock;
+	bool display;
 
 private:
 	void setUp();
@@ -28,7 +29,7 @@ private:
 	void updateMeter();
 
 public:
-	ProgressMeter();
+	ProgressMeter(bool _display);
 	~ProgressMeter();
 	void initialize(uint32_t _data_size);
 	void updateProgress(uint32_t additional_completed, bool update_display);

@@ -101,6 +101,22 @@ void SSRcontainer::writeToFile(OutputFile &ofd, bool block) const
 		ofd.unlock();
 	}
 }
+void SSRcontainer::writeToFile(OutputFile* ofd, bool block) const
+{
+	if (ofd->obtainLock(block))
+	{
+		for (unordered_map<string, vector<SSR*>*>::iterator itr = this->ssrs->begin(); itr != this->ssrs->end(); ++itr)
+		{
+			for (uint32_t i = 0; i < itr->second->size(); ++i)
+			{
+				*ofd << itr->first << '\t';
+				itr->second->at(i)->writeToFile(*ofd);
+			}
+		}
+
+		ofd->unlock();
+	}
+}
 string SSRcontainer::toString() const
 {
 	string output = "SSRcontainer: { ";

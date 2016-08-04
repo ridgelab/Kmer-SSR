@@ -41,13 +41,13 @@ obj/Task.o: src/Task.cpp include/Task.h
 obj/TaskQueue.o: src/TaskQueue.cpp include/TaskQueue.h include/Task.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-obj/FindSSRs.o: src/FindSSRs.cpp include/FindSSRs.h include/Arguments.h include/Results.h include/SingleResult.h include/OutputFile.h include/FastaSequences.h include/AtomicityChecker.h lib/sais-lite-lcp/sais.c
+obj/ProgressMeter.o: src/ProgressMeter.cpp include/ProgressMeter.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+obj/FindSSRs.o: src/FindSSRs.cpp include/FindSSRs.h include/Arguments.h include/SSR.h include/SSRcontainer.h include/OutputFile.h include/Task.h include/TaskQueue.h include/AtomicityChecker.h include/ProgressMeter.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 obj/main.o: src/main.cpp include/FindSSRs.h include/Arguments.h include/Results.h include/SingleResult.h include/OutputFile.h include/FastaSequences.h
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-obj/ProgressMeter.o: src/ProgressMeter.cpp include/ProgressMeter.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 bin/kmer-ssr: obj/main.o obj/OutputFile.o obj/FastaSequences.o obj/AtomicityChecker.o obj/FindSSRs.o obj/Results.o obj/SingleResult.o obj/Arguments.o obj/ProgressMeter.o
@@ -61,15 +61,12 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/fastaSequences test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments
+test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
 test/bin/progressMeter: test/src/progressMeter.cpp obj/ProgressMeter.o
-	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
-
-test/bin/fastaSequences: test/src/fastaSequences.cpp obj/FastaSequences.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
 test/bin/outputFile: test/src/outputFile.cpp obj/OutputFile.o
@@ -93,10 +90,12 @@ test/bin/voidPointer: test/src/voidPointer.cpp
 test/bin/arguments: test/src/arguments.cpp obj/Arguments.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/findSSRs: test/src/findSSRs.cpp obj/FindSSRs.o obj/Arguments.o obj/TaskQueue.o obj/Task.o obj/SSRcontainer.o obj/SSR.o obj/ProgressMeter.o obj/AtomicityChecker.o obj/OutputFile.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test:
 	@test/bin/atomicityChecker
 	@test/bin/progressMeter
-	@test/bin/fastaSequences
 	@test/bin/outputFile
 	@test/bin/ssr
 	@test/bin/ssrContainer
@@ -104,12 +103,12 @@ test:
 	@test/bin/taskQueue
 	@test/bin/voidPointer
 	@test/bin/arguments
+	@test/bin/findSSRs
 	@printf "\n"
 
 supertest:
 	@valgrind --leak-check=full test/bin/atomicityChecker
 	@valgrind --leak-check=full test/bin/progressMeter
-	@valgrind --leak-check=full test/bin/fastaSequences
 	@valgrind --leak-check=full test/bin/outputFile
 	@valgrind --leak-check=full test/bin/ssr
 	@valgrind --leak-check=full test/bin/ssrContainer
@@ -117,4 +116,5 @@ supertest:
 	@valgrind --leak-check=full test/bin/taskQueue
 	@valgrind --leak-check=full test/bin/voidPointer
 	@valgrind --leak-check=full test/bin/arguments
+	@valgrind --leak-check=full test/bin/findSSRs
 	@printf "\n"

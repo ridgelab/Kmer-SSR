@@ -2,3 +2,5 @@
 
 !/.gitignore
 !/src
+!/input/*
+!/output/expected/*

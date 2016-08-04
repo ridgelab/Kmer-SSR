@@ -9,7 +9,7 @@ static uint32_t calculateDataSizeFromFasta(ifstream &fasta);
 static void* consume(void* consumer_args_vptr);
 static bool isGoodSSR(SSR* ssr, uint32_t global_pos, const vector<bool> &filter, Arguments* args, AtomicityChecker* atomicity_checker);
 static bool keepSSR(SSR* ssr, Arguments* args);
-static vector<SSR*>* findSSRsExhaustively(Task* task);
+static vector<SSR*>* findSSRsExhaustively(Task* task, set<uint32_t, bool(*)(uint32_t,uint32_t)>* periods);
 static vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* atomicity_checker);
 static vector<SSR*>* findSSRs(Task* task, Arguments* args, AtomicityChecker* atomicity_checker);
 
@@ -22,12 +22,12 @@ static vector<SSR*>* findSSRs(Task* task, Arguments* args, AtomicityChecker* ato
 struct ConsumerArguments
 {
 	TaskQueue* tasks_ptr;
-	ProgressBar* progress_bar_ptr;
+	ProgressMeter* progress_bar_ptr;
 	OutputFile* ofd_ptr;
 	AtomicityChecker* atomicity_checker_ptr;
 	Arguments* arguments_ptr;
 
-	ConsumerArguments(TaskQueue* _tasks_ptr, ProgressBar* _progress_bar_ptr, OutputFile* _ofd_ptr, AtomicityChecker* _atomicity_checker_ptr, Arguments* _arguments_ptr)
+	ConsumerArguments(TaskQueue* _tasks_ptr, ProgressMeter* _progress_bar_ptr, OutputFile* _ofd_ptr, AtomicityChecker* _atomicity_checker_ptr, Arguments* _arguments_ptr)
 	{
 		tasks_ptr = _tasks_ptr;
 		progress_bar_ptr = _progress_bar_ptr;
@@ -58,7 +58,7 @@ FindSSRs::FindSSRs(Arguments* _args)
 {
 	this->args = _args;
 	this->out_file = new OutputFile(this->args->getOutFileName());
-	this->progress_bar = new ProgressMeter();
+	this->progress_bar = new ProgressMeter(this->args->displayProgressBar());
 	this->atomicity_checker = new AtomicityChecker();
 	this->tasks = new TaskQueue(this->args->getMaxTaskQueueSize());
 }
@@ -123,8 +123,8 @@ uint32_t FindSSRs::makeThreads()
 		pthread_t thread;
 		this->threads.push_back(thread);
 
-		//if ( pthread_create(&thread, NULL, &consume, new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->args)) != 0 )
-		if ( pthread_create(&thread, &tattr, &consume, (void*) new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->args)) != 0 )
+		//if ( pthread_create(&thread, NULL, &consume, new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->atomicity_checker, this->args)) != 0 )
+		if ( pthread_create(&thread, &tattr, &consume, (void*) new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->atomicity_checker, this->args)) != 0 )
 		{
 			perror("creating threads");
 			return errno;
@@ -209,7 +209,7 @@ void FindSSRs::processInput() // produce
 		{
 			if (line[0] != '>') // line is a sequence
 			{
-				this->progress_bar.updateProgress(1, false); // +1 for the '\n'
+				this->progress_bar->updateProgress(1, false); // +1 for the '\n'
 
 				for (uint32_t i = 0; i < (line.size() - 1); ++i) // -1 because we don't want to add the '\n' to the sequence
 				{
@@ -266,7 +266,7 @@ void FindSSRs::processInput() // produce
 		
 			// fulfill the task, add the results to the SSRcontainer, attempt to write them to file
 			ssrs->add(task->getID(), findSSRs(task, this->args, this->atomicity_checker));
-			ssrs->writeTofile(this->out_file, false); // false means it won't block if it can't write
+			ssrs->writeToFile(this->out_file, false); // false means it won't block if it can't write
 		
 			// let the user know we've made some progress
 			progress_bar->updateProgress(task->size(), true);
@@ -278,7 +278,7 @@ void FindSSRs::processInput() // produce
 		// if we didn't write everything, let's do it now
 		if (!ssrs->empty())
 		{
-			ssrs->writeToFile(ofd, true); // true means it will block until it can write
+			ssrs->writeToFile(this->out_file, true); // true means it will block until it can write
 		}
 
 		delete ssrs;
@@ -303,17 +303,18 @@ void FindSSRs::processSequence(const string &header, const string &sequence)
 	switch (this->args->getNumThreads())
 	{
 		case 1:
+		{
 			SSRcontainer* ssrs = new SSRcontainer();
 			Task* task = nullptr;
 
 			for (uint32_t i = 0; i < starts.size(); ++i)
 			{
 				// create the task
-				task = new Task(header, sub_seq, starts[i], sequence.size());
+				task = new Task(header, sequence.substr(starts[i], sizes[i]), starts[i], sequence.size());
 				
 				// fulfill the task, add the results to the SSRcontainer so we can write them to file
 				ssrs->add(task->getID(), findSSRs(task, this->args, this->atomicity_checker));
-				ssrs->writeTofile(this->out_file, true); // true means it will block if it can't write (it will always be able to write bcuz it has no competition)
+				ssrs->writeToFile(this->out_file, true); // true means it will block if it can't write (it will always be able to write bcuz it has no competition)
 				
 				// let the user know we've made some progress
 				progress_bar->updateProgress(task->size(), true);
@@ -325,8 +326,9 @@ void FindSSRs::processSequence(const string &header, const string &sequence)
 			delete ssrs;
 
 			break;
-		
+		}
 		default:
+		{
 			for (uint32_t i = 0; i < starts.size(); ++i)
 			{
 				// add a new task to the TaskQueue (so another thread can process it)
@@ -334,6 +336,7 @@ void FindSSRs::processSequence(const string &header, const string &sequence)
 			}
 			
 			break;
+		}
 	}
 }
 
@@ -363,7 +366,7 @@ void* consume(void* consumer_args_vptr)
 
 	// Extract the arguments out of the struct
 	TaskQueue* tasks = consumer_args->tasks_ptr;
-	ProgressBar* progress_bar = consumer_args->progress_bar_ptr;
+	ProgressMeter* progress_bar = consumer_args->progress_bar_ptr;
 	OutputFile* ofd = consumer_args->ofd_ptr;
 	AtomicityChecker* atomicity_checker = consumer_args->atomicity_checker_ptr;
 	Arguments* args = consumer_args->arguments_ptr;
@@ -373,7 +376,7 @@ void* consume(void* consumer_args_vptr)
 	Task* task = nullptr;
 
 	// while we have work to do
-	while true
+	while (true)
 	{
 		// get a task to perform
 		task = tasks->get();
@@ -386,7 +389,7 @@ void* consume(void* consumer_args_vptr)
 
 		// add the ssrs to the container and *attempt* to write all ssrs in the container to file
 		ssrs->add(task->getID(), findSSRs(task, args, atomicity_checker));
-		ssrs->writeTofile(ofd, false); // false means it won't block if it can't write
+		ssrs->writeToFile(ofd, false); // false means it won't block if it can't write
 
 		// update the progress bar with the work done
 		progress_bar->updateProgress(task->size(), true);
@@ -403,19 +406,22 @@ void* consume(void* consumer_args_vptr)
 	// delete the arguments pointer and the SSRcontainer
 	delete consumer_args;
 	delete ssrs;
+
+	return nullptr;
 }
 
 static
 SSR* seekSinglePeriodSizeSSRatIndex(const string &sequence, uint32_t index, uint32_t global_pos, uint32_t period)
 {
-	string base = sequence.substr(index : period);
-	string next = current;
+	string base = sequence.substr(index, period);
+	string next = base;
 	uint32_t repeats = 0;
 	uint32_t pos = index + period;
-	while (base == next)
+	
+	while ( (base == next) && (pos < (sequence.size() - period + 1)) )
 	{
 		++repeats;
-		next = sequence.substr(pos : period);
+		next = sequence.substr(pos,  period);
 		pos += period;
 	}
 
@@ -445,7 +451,7 @@ bool isGoodSSR(SSR* ssr, uint32_t global_pos, const vector<bool> &filter, Argume
 	}
 
 	// check overlap of entire SSR
-	for (uint32_t i = ssr->getStartPosition - global_pos; i < ssr->getExclusiveEndPosition() - global_pos; ++i)
+	for (uint32_t i = ssr->getStartPosition() - global_pos; i < ssr->getExclusiveEndPosition() - global_pos; ++i)
 	{
 		if (!filter[i])
 		{
@@ -475,19 +481,21 @@ bool keepSSR(SSR* ssr, Arguments* args)
 }
 
 static
-vector<SSR*>* findSSRsExhaustively(Task* task)
+vector<SSR*>* findSSRsExhaustively(Task* task, set<uint32_t, bool(*)(uint32_t,uint32_t)>* periods)
 {
 	vector<SSR*>* ssrs = new vector<SSR*>();
 
 	string seq = task->getSequence();
-	vector<uint32_t> periods = task->getPeriods();
+	//vector<uint32_t> periods = task->getPeriods();
 
-	for (uint32_t i = 0; i < periods.size(); ++i)
+	//for (uint32_t i = 0; i < periods.size(); ++i)
+	for (set<uint32_t, bool(*)(uint32_t,uint32_t)>::iterator itr = periods->begin(); itr != periods->end(); ++itr)
 	{
 		for (uint32_t index = 0; index < task->size(); ++index)
 		{
 			//ssrs.push_back(seekSinglePeriodSizeSSRatIndex(task->getSequenceRef(), index, task->getGlobalPosition(), periods[i]));
-			ssrs->push_back(seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]));
+			//ssrs->push_back(seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]));
+			ssrs->push_back(seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), *itr));
 		}
 	}
 
@@ -502,31 +510,45 @@ vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* at
 	vector<SSR*>* ssrs = new vector<SSR*>();
 
 	string seq = task->getSequence();
-	vector<uint32_t> periods = task->getPeriods();
+	set<uint32_t, bool(*)(uint32_t,uint32_t)>* periods = args->getPeriods();
 	SSR* ssr = nullptr;
 	
-	for (uint32_t i = 0; i < periods.size(); ++i)
+	//for (uint32_t i = 0; i < periods.size(); ++i)
+	for (set<uint32_t, bool(*)(uint32_t,uint32_t)>::iterator itr = periods->begin(); itr != periods->end(); ++itr)
 	{
 		for (uint32_t index = 0; index < task->size(); ++index)
 		{
-			ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]);
+			//ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]);
+			ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), *itr);
 
-			if (this->isGoodSSR(ssr, task->getGlobalPosition(), *filter))
+			if (isGoodSSR(ssr, task->getGlobalPosition(), *filter, args, atomicity_checker))
 			{
-				if (this->keepSSR(ssr))
-				{
-					ssrs->push_back(ssr);
-				}
-
 				for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j)
 				{
 					filter->at(j) = true;
 				}
 
-				index += (ssr->getLength() - periods[i] - 1);
+				//index += (ssr->getLength() - periods[i] - 1);
+				index += (ssr->getLength() - *itr - 1);
+
+				if (keepSSR(ssr, args))
+				{
+					ssrs->push_back(ssr);
+				}
+				else
+				{
+					delete ssr;
+				}
+			}
+			else
+			{
+				delete ssr;
 			}
 		}
 	}
+
+	filter->clear();
+	delete filter;
 
 	return ssrs;
 }
@@ -536,7 +558,7 @@ vector<SSR*>* findSSRs(Task* task, Arguments* args, AtomicityChecker* atomicity_
 {
 	if (args->doExhaustiveSearch())
 	{
-		return findSSRsExhaustively(task);
+		return findSSRsExhaustively(task, args->getPeriods());
 	}
 
 	return findSSRsNormally(task, args, atomicity_checker);
