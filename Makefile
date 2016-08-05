@@ -7,7 +7,7 @@ LIBS?=
 PREFIX=/usr/local/bin
 
 # ------ TARGETS ---------------------
-.PHONY: all prep permissions clean realclean install test-setup test supertest
+.PHONY: all prep permissions clean realclean install test-setup test-prep test-permissions test supertest
 all: prep bin/kmer-ssr permissions test-setup
 
 clean:
@@ -18,7 +18,7 @@ realclean: clean
 	@rm -rf bin obj test/bin test/output/actual || true
 
 prep:
-	@mkdir -p obj bin test/bin test/output/actual || true
+	@mkdir -p obj bin || true
 
 obj/Arguments.o: src/Arguments.cpp include/Arguments.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -55,13 +55,17 @@ bin/kmer-ssr: obj/main.o obj/OutputFile.o obj/FastaSequences.o obj/AtomicityChec
 
 permissions:
 	@chmod 750 bin bin/kmer-ssr test/bin || true
-	@chmod 750 include src obj test test/src || true
+	@chmod 750 include src obj test test/src test/input test/output test/output/actual || true
 	@chmod 640 include/* src/* obj/* example/* test/src/* || true
+	@chmod 440 test/input/* test/output/expected/*
 
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: prep test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs
+test-setup: test-prep test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs test-permissions
+
+test-prep:
+	@mkdir -p obj test/bin test/output/actual || true
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
@@ -92,6 +96,13 @@ test/bin/arguments: test/src/arguments.cpp obj/Arguments.o
 
 test/bin/findSSRs: test/src/findSSRs.cpp obj/FindSSRs.o obj/Arguments.o obj/TaskQueue.o obj/Task.o obj/SSRcontainer.o obj/SSR.o obj/ProgressMeter.o obj/AtomicityChecker.o obj/OutputFile.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
+test-permissions:
+	@chmod 750 test/bin || true
+	@chmod 750 include src obj test test/src test/input test/output || true
+	@chmod 770 test/output/actual || true
+	@chmod 640 include/* src/* obj/* example/* test/src/* || true
+	@chmod 440 test/input/* test/output/expected/*
 
 test:
 	@test/bin/atomicityChecker
