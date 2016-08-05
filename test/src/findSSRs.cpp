@@ -18,8 +18,15 @@ using namespace std;
 
 bool test1();
 bool test2();
-//bool test3();
-//bool test4();
+bool test3();
+bool test4();
+bool test5();
+bool test6();
+bool test7();
+bool test8();
+bool test9();
+bool test10();
+bool test11();
 
 int main()
 {
@@ -27,7 +34,11 @@ int main()
 	
 	int ret_val = 0; // also used to count the number of failed tests
 
-	vector<bool (*)()> tests = { test1, test2 };
+	vector<bool (*)()> tests = {
+		test1, test2, test3, test4, test5,
+		test6, test7, test8, test9, test10,
+		test11
+	};
 
 	for (uint32_t i = 0; i < tests.size(); ++i)
 	{
@@ -104,6 +115,7 @@ bool actualOutputMatchedExpected(const string &actual_fn, const string &expected
 	return ret_val;
 }
 
+// tests 1-2 are really just examples to make sure our testing scheme works
 bool test1()
 {
 	bool ret_val = true;
@@ -112,7 +124,6 @@ bool test1()
 
 	try
 	{
-			//(char*)("-e"),
 		int argc = 8;
 		char* argv[] = {
 			(char*)("test1"),
@@ -186,6 +197,469 @@ bool test2()
 			if (ret_val)
 			{
 				ret_val = actualOutputMatchedExpected("test/output/actual/2.tsv", "test/output/expected/2.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// tests 3-11 will be for testing the -p parameter 
+// tests 3-11 will use the same input file
+
+// test 3 tests periods 1-7 at once
+bool test3()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test3"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/3.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/3.tsv"),
+			(char*)("-p"),
+			(char*)("1-7")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/3.tsv", "test/output/expected/3.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 4 tests periods 1-7 at once, using commas
+bool test4()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test4"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/4.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/4.tsv"),
+			(char*)("-p"),
+			(char*)("1,2,3,4,5,6,7")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/4.tsv", "test/output/expected/4.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 5 tests period 1
+bool test5()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test5"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/5.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/5.tsv"),
+			(char*)("-p"),
+			(char*)("1")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/5.tsv", "test/output/expected/5.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 6 tests period 2
+bool test6()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test6"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/6.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/6.tsv"),
+			(char*)("-p"),
+			(char*)("2")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/6.tsv", "test/output/expected/6.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+
+// test 7 tests period 3
+bool test7()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test7"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/7.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/7.tsv"),
+			(char*)("-p"),
+			(char*)("3")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/7.tsv", "test/output/expected/7.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 8 tests period 4
+bool test8()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test8"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/8.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/8.tsv"),
+			(char*)("-p"),
+			(char*)("4")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/8.tsv", "test/output/expected/8.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 9 tests period 5
+bool test9()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test9"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/9.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/9.tsv"),
+			(char*)("-p"),
+			(char*)("5")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/9.tsv", "test/output/expected/9.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 10 tests period 6
+bool test10()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test10"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/10.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/10.tsv"),
+			(char*)("-p"),
+			(char*)("6")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/10.tsv", "test/output/expected/10.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 11 tests period 7
+bool test11()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test11"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/11.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/11.tsv"),
+			(char*)("-p"),
+			(char*)("7")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/11.tsv", "test/output/expected/11.tsv");
 			}
 		}
 	}
