@@ -15,10 +15,10 @@ clean:
 	@if [ -e $(PREFIX)/kmer-ssr -a -r $(PREFIX)/kmer-ssr -a -w $(PREFIX)/kmer-ssr ] ; then rm -f $(PREFIX)/kmer-ssr || true; fi
 
 realclean: clean
-	@rm -rf bin obj test/bin || true
+	@rm -rf bin obj test/bin test/output/actual || true
 
 prep:
-	@mkdir -p obj bin test/bin || true
+	@mkdir -p obj bin test/bin test/output/actual || true
 
 obj/Arguments.o: src/Arguments.cpp include/Arguments.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -61,7 +61,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs
+test-setup: prep test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs
 
 test/bin/atomicityChecker: test/src/atomicityChecker.cpp obj/AtomicityChecker.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@

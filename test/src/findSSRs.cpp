@@ -17,7 +17,7 @@
 using namespace std;
 
 bool test1();
-//bool test2();
+bool test2();
 //bool test3();
 //bool test4();
 
@@ -27,8 +27,7 @@ int main()
 	
 	int ret_val = 0; // also used to count the number of failed tests
 
-	//vector<bool (*)()> tests = { test1, test2, test3, test4 };
-	vector<bool (*)()> tests = { test1 };
+	vector<bool (*)()> tests = { test1, test2 };
 
 	for (uint32_t i = 0; i < tests.size(); ++i)
 	{
@@ -137,6 +136,56 @@ bool test1()
 			if (ret_val)
 			{
 				ret_val = actualOutputMatchedExpected("test/output/actual/1.tsv", "test/output/expected/1.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+bool test2()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test2"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/2.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/2.tsv"),
+			(char*)("-p"),
+			(char*)("1-3")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/2.tsv", "test/output/expected/2.tsv");
 			}
 		}
 	}
