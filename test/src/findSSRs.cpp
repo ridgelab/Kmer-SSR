@@ -27,6 +27,7 @@ bool test8();
 bool test9();
 bool test10();
 bool test11();
+bool test12();
 
 int main()
 {
@@ -37,7 +38,7 @@ int main()
 	vector<bool (*)()> tests = {
 		test1, test2, test3, test4, test5,
 		test6, test7, test8, test9, test10,
-		test11
+		test11, test12
 	};
 
 	for (uint32_t i = 0; i < tests.size(); ++i)
@@ -660,6 +661,73 @@ bool test11()
 			if (ret_val)
 			{
 				ret_val = actualOutputMatchedExpected("test/output/actual/11.tsv", "test/output/expected/11.tsv");
+			}
+		}
+	}
+	catch(string error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	catch(const char* error)
+	{
+		cerr << error << endl;
+		ret_val = false;
+	}
+	
+	delete args;
+
+	return ret_val;
+}
+
+// test 12 tests sesquence edge cases
+// edge cases are as follows:
+//   - beginning of sequence
+//   - end of sequence
+//   - ssr followed by an ssr
+//   - ssr within an ssr
+//   - ssrs overlapping within last period (first one is bigger period size)
+//   - ssrs overlapping entire last period (second one is bigger period size)
+//   - ssrs overlapping more than last period (second one is bigger period size)
+//   - ssrs overlapping within first period (second one is bigger period size)
+//   - ssrs overlapping entire first period (first one is bigger period size)
+//   - ssrs overlapping more than first period (first one is bigger period size)
+//   - imperfect ssr (ATAGATAT should not register as ATAG x2)
+//   - atomicity checks
+//   - identical ssrs separated by n nucleotides, where n is 1-7
+//   - report first of ATATATAT vs TATATATA in seq. ...ATATATATA...
+//   - ...SSR1SSR2SSSR3SSR2SSR1...
+bool test12()
+{
+	bool ret_val = true;
+
+	Arguments* args;
+
+	try
+	{
+		int argc = 8;
+		char* argv[] = {
+			(char*)("test12"),
+			(char*)("-d"),
+			(char*)("-i"),
+			(char*)("test/input/12.fasta"),
+			(char*)("-o"),
+			(char*)("test/output/actual/12.tsv"),
+			(char*)("-p"),
+			(char*)("1-7")
+		};
+
+		args = new Arguments(argc, argv);
+
+		if (!args->helpOrVersionDisplayed())
+		{
+			FindSSRs* find_ssrs = new FindSSRs(args);
+			ret_val = find_ssrs->run() == 0 ? true : false;
+			delete find_ssrs;
+
+			if (ret_val)
+			{
+				ret_val = actualOutputMatchedExpected("test/output/actual/12.tsv", "test/output/expected/12.tsv");
 			}
 		}
 	}

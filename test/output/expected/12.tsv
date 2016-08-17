@@ -1,0 +1,64 @@
+#Sequence_Name	SSR	Repeats	Position
+beginning of sequence: ACG (10)	ACG	10	0
+end of sequence: CGA (10)	CGA	10	20
+ssr followed by an ssr CG (8) AT (8)	CG	8	8
+ssr followed by an ssr CG (8) AT (8)	AT	8	24
+ssr within an ssr ACGTCTC (5) w/ TC (2) inside each	ACGTCTC	5	7
+ssrs overlapping within last period (first one is bigger period size)	GAC	6	8
+ssrs overlapping within last period (first one is bigger period size)	AC	10	24
+ssrs overlapping entire last period (second one is bigger period size)	GACT	8	26
+ssrs overlapping entire last period (second one is bigger period size)	GAC	7	8
+ssrs overlapping more than last period (second one is bigger period size)	CGAC	10	21
+ssrs overlapping more than last period (second one is bigger period size)	GAC	6	7
+ssrs overlapping within first period (second one is bigger period size)	GAC	6	23
+ssrs overlapping within first period (second one is bigger period size)	GA	9	7
+ssrs overlapping entire first period (first one is bigger period size)	TGAC	6	8
+ssrs overlapping entire first period (first one is bigger period size)	GAC	8	29
+ssrs overlapping more than first period (first one is bigger period size)	TGACG	3	8
+ssrs overlapping more than first period (first one is bigger period size)	GAC	5	19
+atomicity check: AT (6) not ATAT (3) or ATATAT (2)	AT	6	8
+identical ssrs separated by 1 nucleotide	AG	10	7
+identical ssrs separated by 1 nucleotide	AG	10	28
+identical ssrs separated by 2 nucleotides	AG	10	7
+identical ssrs separated by 2 nucleotides	AG	10	29
+identical ssrs separated by 3 nucleotides	AG	10	7
+identical ssrs separated by 3 nucleotides	AG	10	30
+identical ssrs separated by 4 nucleotides	AG	10	7
+identical ssrs separated by 4 nucleotides	AG	10	31
+identical ssrs separated by 5 nucleotides	AG	10	7
+identical ssrs separated by 5 nucleotides	AG	10	32
+identical ssrs separated by 6 nucleotides	AG	10	7
+identical ssrs separated by 6 nucleotides	AG	10	33
+identical ssrs separated by 7 nucleotides	AG	10	7
+identical ssrs separated by 7 nucleotides	AG	10	34
+report first of ATATATAT vs TATATATA in seq. ...ATATATATA...	AT	5	7
+SSR1SSR2SSSR3SSR2SSR1	ACGT	8	0
+SSR1SSR2SSSR3SSR2SSR1	CGTA	8	51
+SSR1SSR2SSSR3SSR2SSR1	ACGT	8	102
+SSR1SSR2SSSR3SSR2SSR1	G	19	32
+SSR1SSR2SSSR3SSR2SSR1	C	19	83
+...SSR1SSR2SSSR3SSR2SSR1...	ACGT	8	8
+...SSR1SSR2SSSR3SSR2SSR1...	CGTA	8	59
+...SSR1SSR2SSSR3SSR2SSR1...	ACGT	8	110
+...SSR1SSR2SSSR3SSR2SSR1...	G	19	40
+...SSR1SSR2SSSR3SSR2SSR1...	C	19	91
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	ACGT	8	0
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	CGTA	8	51
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	ACGT	8	102
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	ACGT	8	141
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	CGTA	8	192
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	ACGT	8	243
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	G	19	32
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	C	19	83
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	G	19	173
+SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1	C	19	224
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	ACGT	8	8
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	CGTA	8	59
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	ACGT	8	110
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	ACGT	8	149
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	CGTA	8	200
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	ACGT	8	251
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	G	19	40
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	C	19	91
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	G	19	181
+...SSR1SSR2SSSR3SSR2SSR1...SSR1SSR2SSSR3SSR2SSR1...	C	19	232
