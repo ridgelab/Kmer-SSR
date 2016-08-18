@@ -308,6 +308,7 @@ void Arguments::processArgs(int argc, char* argv[])
 
 	this->autoDetectCompressedInput();
 	this->autoDetectCompressedOutput();
+	this->display_progress_bar = this->input_file_name != "/dev/stdin" ? this->display_progress_bar : false; // if stdin..we can't determine size of data
 }
 
 void Arguments::autoDetectCompressedInput()

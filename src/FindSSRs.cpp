@@ -199,7 +199,8 @@ void FindSSRs::processInput() // produce
 	fasta_file.open(this->args->getInFileName().c_str());
 
 	// init (set the data_size of) the progress bar
-	this->progress_bar->initialize(calculateDataSizeFromFasta(fasta_file));
+	uint32_t init_size = this->args->getInFileName() == "/dev/stdin" ? 0 : calculateDataSizeFromFasta(fasta_file);
+	this->progress_bar->initialize(init_size);
 
 	string header = "";
 	string sequence = "";
@@ -290,6 +291,7 @@ void FindSSRs::processSequence(const string &header, const string &sequence)
 {
 	if ( (sequence.size() == 0) || (sequence.size() < this->args->getMinSequenceLength()) || (sequence.size() > this->args->getMaxSequenceLength()) )
 	{
+		this->progress_bar->updateProgress(sequence.size(), true);
 		return;
 	}
 	
