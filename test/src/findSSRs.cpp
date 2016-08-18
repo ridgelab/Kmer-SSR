@@ -125,7 +125,7 @@ bool test1()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test1"),
 			(char*)("-d"),
@@ -133,6 +133,10 @@ bool test1()
 			(char*)("test/input/1.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/1.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("2-3")
 		};
@@ -175,7 +179,7 @@ bool test2()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test2"),
 			(char*)("-d"),
@@ -183,6 +187,10 @@ bool test2()
 			(char*)("test/input/2.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/2.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("1-3")
 		};
@@ -229,7 +237,7 @@ bool test3()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test3"),
 			(char*)("-d"),
@@ -237,6 +245,10 @@ bool test3()
 			(char*)("test/input/3.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/3.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("1-7")
 		};
@@ -280,7 +292,7 @@ bool test4()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test4"),
 			(char*)("-d"),
@@ -288,6 +300,10 @@ bool test4()
 			(char*)("test/input/4.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/4.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("1,2,3,4,5,6,7")
 		};
@@ -331,7 +347,7 @@ bool test5()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test5"),
 			(char*)("-d"),
@@ -339,6 +355,10 @@ bool test5()
 			(char*)("test/input/5.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/5.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("1")
 		};
@@ -382,7 +402,7 @@ bool test6()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test6"),
 			(char*)("-d"),
@@ -390,6 +410,10 @@ bool test6()
 			(char*)("test/input/6.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/6.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("2")
 		};
@@ -434,7 +458,7 @@ bool test7()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test7"),
 			(char*)("-d"),
@@ -442,6 +466,10 @@ bool test7()
 			(char*)("test/input/7.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/7.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("3")
 		};
@@ -485,7 +513,7 @@ bool test8()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test8"),
 			(char*)("-d"),
@@ -493,6 +521,10 @@ bool test8()
 			(char*)("test/input/8.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/8.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("4")
 		};
@@ -536,7 +568,7 @@ bool test9()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test9"),
 			(char*)("-d"),
@@ -544,6 +576,10 @@ bool test9()
 			(char*)("test/input/9.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/9.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("5")
 		};
@@ -587,7 +623,7 @@ bool test10()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test10"),
 			(char*)("-d"),
@@ -595,6 +631,10 @@ bool test10()
 			(char*)("test/input/10.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/10.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("6")
 		};
@@ -638,7 +678,7 @@ bool test11()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test11"),
 			(char*)("-d"),
@@ -646,6 +686,10 @@ bool test11()
 			(char*)("test/input/11.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/11.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("7")
 		};
@@ -705,7 +749,7 @@ bool test12()
 
 	try
 	{
-		int argc = 8;
+		int argc = 12;
 		char* argv[] = {
 			(char*)("test12"),
 			(char*)("-d"),
@@ -713,6 +757,10 @@ bool test12()
 			(char*)("test/input/12.fasta"),
 			(char*)("-o"),
 			(char*)("test/output/actual/12.tsv"),
+			(char*)("-n"),
+			(char*)("2"),
+			(char*)("-l"),
+			(char*)("2"),
 			(char*)("-p"),
 			(char*)("1-7")
 		};

@@ -177,11 +177,11 @@ void Arguments::processArgs(int argc, char* argv[])
 {
 	// parse arguments
 	string alphabet_str = "A,C,G,T";         // -a:
-	string min_seq_len_str = "2";            // -l:
+	string min_seq_len_str = "100";            // -l:
 	string max_seq_len_str = "500000000";    // -L: // 500,000,000 (500 million)
-	string min_nucleotides_str = "2";        // -n:
+	string min_nucleotides_str = "16";        // -n:
 	string max_nucleotides_str = "10000";    // -N:
-	string period_s = "4-6";                 // -p:
+	string period_s = "4-8";                 // -p:
 	string max_task_queue_size_str = "1000"; // -Q:
 	string min_repeats_str = "2";            // -r:
 	string max_repeats_str = "1000";         // -R:
@@ -225,7 +225,6 @@ void Arguments::processArgs(int argc, char* argv[])
 		}
 
 		optind = 1; // reset optind to search for everything else
-		//opterr = 0; // reset opterr to search for everything else
 	
 		// search for everything else
 		while ( (c = getopt(argc,argv,"a:AbBdegGhi:l:L:n:N:o:p:Q:r:R:s:t:v")) != -1 )

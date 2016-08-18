@@ -22,12 +22,13 @@ Algorithmic:\n\
 \n\
   -a a1,..,aN\n\
                         A comma-separated list of valid, uppercase characters\n\
-                        (nucleotides). [default=A,C,G,T]\n\
+                        (nucleotides). Characters not in this list will be\n\
+                        ignored. [default=A,C,G,T]\n\
 \n\
   -A\n\
-                        Report non-atomic SSRs (e.g., AT repeated 6 times will\n\
-                        also report an ATAT repeated 3 times and an ATATAT\n\
-                        repeated 2 times).\n\
+                        Report non-atomic SSRs (e.g., AT repeated 6 times may\n\
+                        report an ATAT repeated 3 times or an ATATAT repeated\n\
+                        2 times instead).\n\
 \n\
   -e\n\
                         Disable all filters and SSR validation to report every\n\
@@ -38,19 +39,19 @@ Algorithmic:\n\
   -p p1,..,pN\n\
                         A comma-separated list of period sizes (i.e., kmer\n\
                         lengths). Inclusive ranges are also supported using a\n\
-                        hyphen. [default=4-6]\n\
+                        hyphen. [default=4-8]\n\
 \n\
   -l int\n\
-                        Keep only SSRs with total length (number of\n\
-                        nucleotides) >= n [default: 2]\n\
+                        Only search for SSRs in sequences with total length\n\
+                        >= l [default: 100]\n\
 \n\
   -L int\n\
-                        Keep only SSRs with total length (number of\n\
-                        nucleotides) <= N [default: 10,000]\n\
+                        Only search for SSRs in sequences with total length\n\
+                        <= L [default: 500,000,000]\n\
 \n\
   -n int\n\
                         Keep only SSRs with total length (number of\n\
-                        nucleotides) >= n [default: 2]\n\
+                        nucleotides) >= n [default: 16]\n\
 \n\
   -N int\n\
                         Keep only SSRs with total length (number of\n\
