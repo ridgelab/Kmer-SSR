@@ -15,10 +15,6 @@ bool (*reverseOrderPointer) (uint32_t, uint32_t) = reverseOrder;
 // constuctor / destructor
 Arguments::Arguments(int argc, char* argv[])
 {
-	this->version_file_name = "../.VERSION";
-	this->usage_file_name = "../.USAGE";
-	this->help_file_name = "../.HELP";
-
 	this->input_file_name = "/dev/stdin";
 	this->output_file_name = "/dev/stdout";
 
@@ -33,7 +29,12 @@ Arguments::Arguments(int argc, char* argv[])
 
 	this->threads = 1;
 
-	this->help_or_version_displayed = false;
+	this->help_displayed = false;
+	this->version_displayed = false;
+
+	this->usage_message = USAGE_MESSAGE; // defined in usage.h
+	this->help_message = HELP_MESSAGE;   // defined in help.h
+	this->version = VERSION;             // defined in version.h
 
 	this->alphabet = new unordered_set<char>();
 	this->periods = new set<uint32_t, bool(*)(uint32_t,uint32_t)>(reverseOrderPointer);
@@ -56,7 +57,7 @@ Arguments::~Arguments()
 // public
 bool Arguments::helpOrVersionDisplayed() const
 {
-	return this->help_or_version_displayed;
+	return this->help_displayed | this->version_displayed;
 }
 bool Arguments::isExhaustive() const
 {
@@ -191,7 +192,42 @@ void Arguments::processArgs(int argc, char* argv[])
 
 	if (argc > 1)
 	{
-		while ( (c = getopt(argc,argv,"a:AbBdegGhH:i:n:N:o:p:Q:r:R:s:t:U:vV:")) != -1 )
+		// search for -v
+		while ( (c = getopt(argc,argv,":v")) != -1 )
+		{
+			switch (c)
+			{
+				case 'v':
+					this->version_displayed = true;
+					cerr << "Version: " << this->version << endl;
+					return;
+				case ':': break;
+				case '?': break;
+				default: break;
+			}
+		}
+		
+		optind = 1; // reset optind to search for -h
+
+		// search for -h
+		while ( (c = getopt(argc,argv,":h")) != -1 )
+		{
+			switch (c)
+			{
+				case 'h':
+					this->help_displayed = true;
+					cerr << this->usage_message << endl << endl << this->help_message << endl << endl;
+					return;
+				case ':': break;
+				case '?': break;
+				default: break;
+			}
+		}
+
+		optind = 1; // reset optind to search for everything else
+	
+		// search for everything else
+		while ( (c = getopt(argc,argv,"a:AbBdegGhi:n:N:o:p:Q:r:R:s:t:v")) != -1 )
 		{
 			switch (c)
 			{
@@ -203,11 +239,7 @@ void Arguments::processArgs(int argc, char* argv[])
 				case 'e': this->exhaustive = true; break;
 				case 'g': this->gzipped_input = true; break;
 				case 'G': this->gzipped_output = true; break;
-				case 'h':
-					this->help_or_version_displayed = true;
-					cerr << this->usage_message << endl << endl << this->help_message << endl << endl;
-					break;
-				case 'H': this->help_file_name = optarg; break;
+				case 'h': break;
 				case 'i': this->input_file_name = optarg; break;
 				case 'l': min_seq_len_str = optarg; break;
 				case 'L': max_seq_len_str = optarg; break;
@@ -220,12 +252,7 @@ void Arguments::processArgs(int argc, char* argv[])
 				case 'R': max_repeats_str = optarg; break;
 				case 's': enumerated_ssrs_str = optarg; break;
 				case 't': threads_str = optarg; break;
-				case 'U': this->usage_file_name = optarg; break;
-				case 'v':
-					this->help_or_version_displayed = true;
-					cerr << "Version: " << this->version << endl;
-					break;
-				case 'V': this->version_file_name = optarg; break;
+				case 'v': break;
 				case '?':
 					if (optopt == 'c')
 					{
@@ -246,10 +273,6 @@ void Arguments::processArgs(int argc, char* argv[])
 			}
 		}
 	}
-	
-	this->version = this->generateVersionMessage();
-	this->usage_message = this->generateUsageMessage();
-	this->help_message = this->generateHelpMessage();
 
 	// check for positional parameters (which is an error)
 	if (optind < argc)
@@ -468,33 +491,4 @@ void Arguments::addToPeriods(string period_s)
 			}
 		}
 	}
-}
-string Arguments::generateStringFromFile(const string &fn) const
-{
-	ifstream fd;
-	fd.open(fn.c_str()); // open the file
-	stringstream strm;
-	strm << fd.rdbuf(); // read the file
-	fd.close(); // close the file
-	return strm.str(); // return the file as a string
-}
-string Arguments::generateVersionMessage() const
-{
-	ifstream version_file;
-	version_file.open(this->version_file_name.c_str()); // open the file
-	string temp;
-	getline(version_file, temp); // skip the first line
-	getline(version_file, temp); // grab the version
-	
-	version_file.close(); // close the file
-	
-	return temp; // return the version as a string
-}
-string Arguments::generateUsageMessage() const
-{
-	return this->generateStringFromFile(this->usage_file_name);
-}
-string Arguments::generateHelpMessage() const
-{
-	return this->generateStringFromFile(this->help_file_name);
 }

@@ -1,2 +1,2 @@
-Kmer-SSR
-0.8 (alpha)
+#pragma once
+#define VERSION "0.8 (alpha)"

@@ -20,7 +20,7 @@ realclean: clean
 prep:
 	@mkdir -p obj bin || true
 
-obj/Arguments.o: src/Arguments.cpp include/Arguments.h
+obj/Arguments.o: src/Arguments.cpp include/Arguments.h include/version.h include/help.h include/usage.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 obj/OutputFile.o: src/OutputFile.cpp include/OutputFile.h

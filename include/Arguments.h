@@ -19,6 +19,10 @@
 #include <cstdlib> // exit
 #include <climits> // LONG_MAX, etc.
 
+#include "usage.h" // USAGE_MESSAGE
+#include "help.h" // HELP_MESSAGE
+#include "version.h" // VERSION
+
 using namespace std;
 
 class Arguments
@@ -36,6 +40,7 @@ private:
 	bool gzipped_output;                                // -G
 	string usage_message;                               // -h
 	string help_message;                                // -h
+	bool help_displayed;                                // -h
 	string input_file_name;                             // -i:
 	uint32_t min_sequence_length;                       // -l:
 	uint32_t max_sequence_length;                       // -L:
@@ -48,20 +53,12 @@ private:
 	uint32_t max_repeats;                               // -R:
 	unordered_set<string>* enumerated_ssrs;             // -s:
 	uint32_t threads;                                   // -t:
-	bool help_or_version_displayed;                     // -v
+	bool version_displayed;                             // -v
 	string version;                                     // -v
 	
 
-	string version_file_name;
-	string usage_file_name;
-	string help_file_name;
-	
 	// functions
 	void processArgs(int argc, char* argv[]);
-	string generateStringFromFile(const string &fn) const;
-	string generateVersionMessage() const;
-	string generateUsageMessage() const;
-	string generateHelpMessage() const;
 	uint32_t parsePositiveIntegerArgument(string argument);
 	uint32_t parsePositiveIntegerArgument(char* argument);
 	void addToPeriods(string period_s);
