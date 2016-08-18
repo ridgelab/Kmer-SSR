@@ -288,7 +288,7 @@ void FindSSRs::processInput() // produce
 
 void FindSSRs::processSequence(const string &header, const string &sequence)
 {
-	if (sequence.size() == 0)
+	if ( (sequence.size() == 0) || (sequence.size() < this->args->getMinSequenceLength()) || (sequence.size() > this->args->getMaxSequenceLength()) )
 	{
 		return;
 	}

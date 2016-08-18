@@ -31,11 +31,14 @@ private:
 	bool bzipped2_output;                               // -B
 	bool display_progress_bar;                          // -d
 	bool exhaustive;                                    // -e
+	//bool full_sequence_in_output;                       // -f
 	bool gzipped_input;                                 // -g
 	bool gzipped_output;                                // -G
 	string usage_message;                               // -h
 	string help_message;                                // -h
 	string input_file_name;                             // -i:
+	uint32_t min_sequence_length;                       // -l:
+	uint32_t max_sequence_length;                       // -L:
 	uint32_t min_nucleotides;                           // -n:
 	uint32_t max_nucleotides;                           // -N:
 	string output_file_name;                            // -o:
@@ -68,6 +71,7 @@ private:
 	void autoDetectCompressedInput();
 	void autoDetectCompressedOutput();
 	void sanityCheckArguments() const;
+	void adjustMinSequenceLength();
 
 public:
 	// fields
@@ -82,6 +86,8 @@ public:
 	bool allowNonAtomic() const;
 	bool displayProgressBar() const;
 	uint32_t getMaxTaskQueueSize() const;
+	uint32_t getMinSequenceLength() const;
+	uint32_t getMaxSequenceLength() const;
 	uint32_t getMinNucleotideLength() const;
 	uint32_t getMaxNucleotideLength() const;
 	uint32_t getMinRepeats() const;

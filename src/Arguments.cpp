@@ -78,6 +78,14 @@ uint32_t Arguments::getMaxTaskQueueSize() const
 {
 	return this->max_task_queue_size;
 }
+uint32_t Arguments::getMinSequenceLength() const
+{
+	return this->min_sequence_length;
+}
+uint32_t Arguments::getMaxSequenceLength() const
+{
+	return this->max_sequence_length;
+}
 uint32_t Arguments::getMinNucleotideLength() const
 {
 	return this->min_nucleotides;
@@ -168,6 +176,8 @@ void Arguments::processArgs(int argc, char* argv[])
 {
 	// parse arguments
 	string alphabet_str = "A,C,G,T";         // -a:
+	string min_seq_len_str = "2";            // -l:
+	string max_seq_len_str = "500000000";    // -L: // 500,000,000 (500 million)
 	string min_nucleotides_str = "2";        // -n:
 	string max_nucleotides_str = "10000";    // -N:
 	string period_s = "4-6";                 // -p:
@@ -199,6 +209,8 @@ void Arguments::processArgs(int argc, char* argv[])
 					break;
 				case 'H': this->help_file_name = optarg; break;
 				case 'i': this->input_file_name = optarg; break;
+				case 'l': min_seq_len_str = optarg; break;
+				case 'L': max_seq_len_str = optarg; break;
 				case 'n': min_nucleotides_str = optarg; break;
 				case 'N': max_nucleotides_str = optarg; break;
 				case 'o': this->output_file_name = optarg; break;
@@ -255,6 +267,8 @@ void Arguments::processArgs(int argc, char* argv[])
 	// assign member variables now that we've parsed the arguments
 	this->threads = parsePositiveIntegerArgument(threads_str);
 	this->addToAlphabet(alphabet_str);
+	this->min_sequence_length = parsePositiveIntegerArgument(min_seq_len_str);
+	this->max_sequence_length = parsePositiveIntegerArgument(max_seq_len_str);
 	this->min_nucleotides = parsePositiveIntegerArgument(min_nucleotides_str);
 	this->max_nucleotides = parsePositiveIntegerArgument(max_nucleotides_str);
 	this->min_repeats = parsePositiveIntegerArgument(min_repeats_str);
@@ -262,6 +276,9 @@ void Arguments::processArgs(int argc, char* argv[])
 	this->max_task_queue_size = parsePositiveIntegerArgument(max_task_queue_size_str);
 	this->addToEnumeratedSSRs(enumerated_ssrs_str);
 	this->addToPeriods(period_s);
+
+	// adjust arguments for speed reasons
+	this->adjustMinSequenceLength();
 
 	// sanity check
 	this->sanityCheckArguments();
@@ -312,6 +329,21 @@ void Arguments::sanityCheckArguments() const
 	if (this->min_repeats > this->max_repeats)
 	{
 		throw "ERROR: -r must not be > than -R";
+	}
+
+	if (this->min_sequence_length > this->max_sequence_length)
+	{
+		throw "ERROR: -l must not be > than -L";
+	}
+}
+
+void Arguments::adjustMinSequenceLength()
+{
+	// if the minimum period size we're searching for cannot repeat in
+	// the minimum sequence size, why even look in those sequences?
+	if (this->min_sequence_length < *this->periods->rbegin() * 2)
+	{
+		this->min_sequence_length = *this->periods->rbegin() * 2;
 	}
 }
 
