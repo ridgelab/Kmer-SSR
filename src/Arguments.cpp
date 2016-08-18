@@ -193,7 +193,7 @@ void Arguments::processArgs(int argc, char* argv[])
 	if (argc > 1)
 	{
 		// search for -v
-		while ( (c = getopt(argc,argv,":v")) != -1 )
+		while ( (c = getopt(argc,argv,"+:v")) != -1 )
 		{
 			switch (c)
 			{
@@ -210,7 +210,7 @@ void Arguments::processArgs(int argc, char* argv[])
 		optind = 1; // reset optind to search for -h
 
 		// search for -h
-		while ( (c = getopt(argc,argv,":h")) != -1 )
+		while ( (c = getopt(argc,argv,"+:h")) != -1 )
 		{
 			switch (c)
 			{
@@ -225,9 +225,10 @@ void Arguments::processArgs(int argc, char* argv[])
 		}
 
 		optind = 1; // reset optind to search for everything else
+		//opterr = 0; // reset opterr to search for everything else
 	
 		// search for everything else
-		while ( (c = getopt(argc,argv,"a:AbBdegGhi:n:N:o:p:Q:r:R:s:t:v")) != -1 )
+		while ( (c = getopt(argc,argv,"a:AbBdegGhi:l:L:n:N:o:p:Q:r:R:s:t:v")) != -1 )
 		{
 			switch (c)
 			{
