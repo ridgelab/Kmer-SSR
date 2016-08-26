@@ -97,8 +97,9 @@ uint32_t FindSSRs::run()
 		return 1;
 	}
 
-	// join threads (if needed)
+	// join threads
 	//cerr << "About to start joining threads..." << endl;
+	//usleep(3000000);
 	this->joinAndForgetAllThreads(); // clean up consumers
 
 	// we're done!
@@ -124,8 +125,7 @@ uint32_t FindSSRs::makeThreads()
 		pthread_t thread;
 		this->threads.push_back(thread);
 
-		//if ( pthread_create(&thread, NULL, &consume, new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->atomicity_checker, this->args)) != 0 )
-		if ( pthread_create(&thread, &tattr, &consume, (void*) new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->atomicity_checker, this->args)) != 0 )
+		if ( pthread_create(&(this->threads[this->threads.size() - 1]), &tattr, &consume, (void*) new ConsumerArguments(this->tasks, this->progress_bar, this->out_file, this->atomicity_checker, this->args)) != 0 )
 		{
 			perror("creating threads");
 			return errno;
@@ -411,6 +411,7 @@ void* consume(void* consumer_args_vptr)
 	delete ssrs;
 
 	return nullptr;
+	//pthread_exit(NULL);
 }
 
 static

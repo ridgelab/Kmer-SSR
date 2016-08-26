@@ -42,4 +42,5 @@ int main(int argc, char* argv[])
 	delete args;
 
 	return ret_val;
+	//pthread_exit(NULL);
 }

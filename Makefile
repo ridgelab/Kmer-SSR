@@ -62,7 +62,7 @@ permissions:
 install:
 	@if [ -e bin/kmer-ssr ]; then cp bin/kmer-ssr $(PREFIX)/kmer-ssr || true; else echo "ERROR: \`bin/kmer-ssr' does not exist. Did you forget to run \`make' first?"; fi
 
-test-setup: test-prep test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs test-permissions
+test-setup: test-prep test/bin/atomicityChecker test/bin/progressMeter test/bin/outputFile test/bin/ssr test/bin/ssrContainer test/bin/task test/bin/taskQueue test/bin/voidPointer test/bin/arguments test/bin/findSSRs test/bin/threads test-permissions
 
 test-prep:
 	@mkdir -p obj test/bin test/output/actual || true
@@ -97,6 +97,9 @@ test/bin/arguments: test/src/arguments.cpp obj/Arguments.o
 test/bin/findSSRs: test/src/findSSRs.cpp obj/FindSSRs.o obj/Arguments.o obj/TaskQueue.o obj/Task.o obj/SSRcontainer.o obj/SSR.o obj/ProgressMeter.o obj/AtomicityChecker.o obj/OutputFile.o
 	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
 
+test/bin/threads: test/src/threads.cpp obj/FindSSRs.o obj/Arguments.o obj/TaskQueue.o obj/Task.o obj/SSRcontainer.o obj/SSR.o obj/ProgressMeter.o obj/AtomicityChecker.o obj/OutputFile.o
+	$(CXX) $(CXXFLAGS) $(LIBS) $^ -o $@
+
 test-permissions:
 	@chmod 750 test/bin || true
 	@chmod 750 include src obj test test/src test/input test/output || true
@@ -115,6 +118,7 @@ test:
 	@test/bin/voidPointer
 	@test/bin/arguments
 	@test/bin/findSSRs
+	@test/bin/threads
 	@printf "\n"
 
 supertest:
@@ -128,4 +132,6 @@ supertest:
 	@valgrind --leak-check=full test/bin/voidPointer
 	@valgrind --leak-check=full test/bin/arguments
 	@valgrind --leak-check=full test/bin/findSSRs
+	@valgrind --leak-check=full test/bin/threads
 	@printf "\n"
+	@printf "%s\n\n" "If you see one block still reachable in these tests, it's probably okay: http://stackoverflow.com/a/30403709"
