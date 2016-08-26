@@ -10,7 +10,8 @@ INSTALL
 -------
 Type `make' followed by `make install'.  The binary will be in both the `bin'
 and `/usr/local/bin' directories.  To change the installation location, change
-the `PREFIX' variable near the top of `Makefile'.
+the `PREFIX' variable near the top of `Makefile'. The compiler is assumed to be
+g++. If you require a different compiler, edit the Makefile accordingly.
 
 TEST
 ----
@@ -31,4 +32,4 @@ realclean' will also remove the `bin' and `obj' directories.
 IMPORTANT NOTES
 ---------------
 Your compiler must support C++11. We developed and tested Kmer-SSR using gcc
-version 4.9.2.
+versions 4.9.2 and 5.3.0.
