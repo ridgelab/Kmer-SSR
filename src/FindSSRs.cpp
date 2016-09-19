@@ -417,6 +417,8 @@ void* consume(void* consumer_args_vptr)
 static
 SSR* seekSinglePeriodSizeSSRatIndex(const string &sequence, uint32_t index, uint32_t global_pos, uint32_t period)
 {
+	//assert((period * 2) <= sequence.size());
+	
 	string base = sequence.substr(index, period);
 	string next = base;
 	uint32_t repeats = 0;
@@ -520,33 +522,36 @@ vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* at
 	//for (uint32_t i = 0; i < periods.size(); ++i)
 	for (set<uint32_t, bool(*)(uint32_t,uint32_t)>::iterator itr = periods->begin(); itr != periods->end(); ++itr)
 	{
-		for (uint32_t index = 0; index < task->size(); ++index)
+		if ( (*itr * 2) <= seq.size() )
 		{
-			//ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]);
-			ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), *itr);
-
-			if (isGoodSSR(ssr, task->getGlobalPosition(), *filter, args, atomicity_checker))
+			for (uint32_t index = 0; index < task->size(); ++index)
 			{
-				for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j)
-				{
-					filter->at(j) = true;
-				}
+				//ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), periods[i]);
+				ssr = seekSinglePeriodSizeSSRatIndex(seq, index, task->getGlobalPosition(), *itr);
 
-				//index += (ssr->getLength() - periods[i] - 1);
-				index += (ssr->getLength() - *itr - 1);
-
-				if (keepSSR(ssr, args))
+				if (isGoodSSR(ssr, task->getGlobalPosition(), *filter, args, atomicity_checker))
 				{
-					ssrs->push_back(ssr);
+					for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j)
+					{
+						filter->at(j) = true;
+					}
+
+					//index += (ssr->getLength() - periods[i] - 1);
+					index += (ssr->getLength() - *itr - 1);
+
+					if (keepSSR(ssr, args))
+					{
+						ssrs->push_back(ssr);
+					}
+					else
+					{
+						delete ssr;
+					}
 				}
 				else
 				{
 					delete ssr;
 				}
-			}
-			else
-			{
-				delete ssr;
 			}
 		}
 	}
