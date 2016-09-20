@@ -22,7 +22,7 @@ class SSRcontainer
 {
 private:
 	static const uint32_t ID_INDEX = 0;
-	static const uint32_t BASE_SSRcontainer_INDEX = 1;
+	static const uint32_t BASE_SSR_INDEX = 1;
 	static const uint32_t REPEATS_INDEX = 2;
 	static const uint32_t START_POS_INDEX = 3;
 
