@@ -37,8 +37,8 @@ public:
 	void add(const string &identifier, vector<SSR*>* ssrs_vec);
 	void clear();
 	void writeToFile(ofstream &ofd) const;
-	void writeToFile(OutputFile &ofd, bool block, bool clear) const;
-	void writeToFile(OutputFile* ofd, bool block, bool clear) const;
+	void writeToFile(OutputFile &ofd, bool block, bool clear);
+	void writeToFile(OutputFile* ofd, bool block, bool clear);
 	string toString() const;
 	string toJson() const;
 };
