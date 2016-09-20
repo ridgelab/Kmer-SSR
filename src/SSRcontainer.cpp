@@ -85,7 +85,7 @@ void SSRcontainer::writeToFile(ofstream &ofd) const
 		}
 	}
 }
-void SSRcontainer::writeToFile(OutputFile &ofd, bool block) const
+void SSRcontainer::writeToFile(OutputFile &ofd, bool block, bool clear) const
 {
 	if (ofd.obtainLock(block))
 	{
@@ -99,9 +99,14 @@ void SSRcontainer::writeToFile(OutputFile &ofd, bool block) const
 		}
 
 		ofd.unlock();
+
+		if (clear)
+		{
+			this->clear();
+		}
 	}
 }
-void SSRcontainer::writeToFile(OutputFile* ofd, bool block) const
+void SSRcontainer::writeToFile(OutputFile* ofd, bool block, bool clear) const
 {
 	if (ofd->obtainLock(block))
 	{
@@ -115,6 +120,11 @@ void SSRcontainer::writeToFile(OutputFile* ofd, bool block) const
 		}
 
 		ofd->unlock();
+
+		if (clear)
+		{
+			this->clear();
+		}
 	}
 }
 string SSRcontainer::toString() const

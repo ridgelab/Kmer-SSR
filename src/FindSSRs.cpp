@@ -268,7 +268,7 @@ void FindSSRs::processInput() // produce
 		
 			// fulfill the task, add the results to the SSRcontainer, attempt to write them to file
 			ssrs->add(task->getID(), findSSRs(task, this->args, this->atomicity_checker));
-			ssrs->writeToFile(this->out_file, false); // false means it won't block if it can't write
+			ssrs->writeToFile(this->out_file, false, true); // false means it won't block if it can't write, true means it will clear the SSRcontainer if it wrote
 		
 			// let the user know we've made some progress
 			progress_bar->updateProgress(task->size(), true);
@@ -280,7 +280,7 @@ void FindSSRs::processInput() // produce
 		// if we didn't write everything, let's do it now
 		if (!ssrs->empty())
 		{
-			ssrs->writeToFile(this->out_file, true); // true means it will block until it can write
+			ssrs->writeToFile(this->out_file, true, false); // true means it will block until it can write, false means it won't clear the SSRcontainer when finished (because we're about to delete the thing anyway right after this)
 		}
 
 		delete ssrs;
@@ -317,7 +317,7 @@ void FindSSRs::processSequence(const string &header, const string &sequence)
 				
 				// fulfill the task, add the results to the SSRcontainer so we can write them to file
 				ssrs->add(task->getID(), findSSRs(task, this->args, this->atomicity_checker));
-				ssrs->writeToFile(this->out_file, true); // true means it will block if it can't write (it will always be able to write bcuz it has no competition)
+				ssrs->writeToFile(this->out_file, true, true); // true means it will block if it can't write (it will always be able to write bcuz it has no competition), the second true means clear the SSRcontainer after writing
 				
 				// let the user know we've made some progress
 				progress_bar->updateProgress(task->size(), true);
@@ -392,7 +392,7 @@ void* consume(void* consumer_args_vptr)
 
 		// add the ssrs to the container and *attempt* to write all ssrs in the container to file
 		ssrs->add(task->getID(), findSSRs(task, args, atomicity_checker));
-		ssrs->writeToFile(ofd, false); // false means it won't block if it can't write
+		ssrs->writeToFile(ofd, false, true); // false means it won't block if it can't write, true means clear the SSRcontainer (if it wrote)
 
 		// update the progress bar with the work done
 		progress_bar->updateProgress(task->size(), true);
@@ -403,7 +403,7 @@ void* consume(void* consumer_args_vptr)
 	// if we haven't printed out all the ssrs yet, do it
 	if (!ssrs->empty())
 	{
-		ssrs->writeToFile(ofd, true); // true means it will block until it can write
+		ssrs->writeToFile(ofd, true, false); // true means it will block until it can write, false don't means clear the SSRcontainer (because we're about to delete it anyway)
 	}
 
 	// delete the arguments pointer and the SSRcontainer
