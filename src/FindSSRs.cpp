@@ -217,6 +217,14 @@ void FindSSRs::processInput() // produce
 				{
 					//sequence = sequence + (char) toupper(line[i]);
 					sequence += (char) toupper(line[i]);
+					//if (!isspace(line[i])) // TODO
+					//{
+					//	sequence += (char) toupper(line[i]);
+					//}
+					//else
+					//{
+					//	// update the progress bar based on the space
+					//}
 				}
 			}
 			else // line is a header
@@ -431,6 +439,21 @@ SSR* seekSinglePeriodSizeSSRatIndex(const string &sequence, uint32_t index, uint
 		next = sequence.substr(pos,  period);
 	}
 
+	//// check up to one period before
+	//for (uint32_t i = index; (i >= 0) && (i > (index - period)); --i)
+	//{
+	//	if (sequence[i] == sequence[i + period])
+	//	{
+
+	//	}
+
+	//	if (i == 0)
+	//	{
+	//		break;
+	//	}
+	//}
+	//// check up to one period after
+
 	return new SSR(base, repeats, index + global_pos);
 }
 
@@ -455,6 +478,30 @@ bool isGoodSSR(SSR* ssr, uint32_t global_pos, const vector<bool> &filter, Argume
 	{
 		return false; // this SSR was not atomic (e.g., ATAT instead of AT)
 	}
+
+	//// check overlap of first/last periods 
+	//bool good = true;
+	//for (uint32_t i = (ssr->getStartPosition() - global_pos); i < (ssr->getStartPosition() - global_pos + ssr->getPeriod()); ++i)
+	//{
+	//	if (filter[i])
+	//	{
+	//		good = false;
+	//		break;
+	//	}
+	//}
+	//
+	//if (!good)
+	//{
+	//	for (uint32_t i = (ssr->getExclusiveEndPosition() - 1 - global_pos - ssr->getPeriod()); i < (ssr->getExclusiveEndPosition() - global_pos); ++i)
+	//	{
+	//		if (filter[i])
+	//		{
+	//			return false;
+	//		}
+	//	}
+	//}
+
+	//return true;
 
 	// check overlap of entire SSR
 	for (uint32_t i = ssr->getStartPosition() - global_pos; i < ssr->getExclusiveEndPosition() - global_pos; ++i)
@@ -531,10 +578,10 @@ vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* at
 
 				if (isGoodSSR(ssr, task->getGlobalPosition(), *filter, args, atomicity_checker))
 				{
-					for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j)
-					{
-						filter->at(j) = true;
-					}
+					//for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j) // TODO
+					//{
+					//	filter->at(j) = true;
+					//}
 
 					//index += (ssr->getLength() - periods[i] - 1);
 					index += (ssr->getLength() - *itr - 1);
@@ -542,6 +589,10 @@ vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* at
 					if (keepSSR(ssr, args))
 					{
 						ssrs->push_back(ssr);
+						for (uint32_t j = (ssr->getStartPosition() - task->getGlobalPosition()); j < (ssr->getExclusiveEndPosition() - task->getGlobalPosition()); ++j)
+						{
+							filter->at(j) = true;
+						}
 					}
 					else
 					{
