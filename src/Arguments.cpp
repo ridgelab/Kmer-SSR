@@ -256,15 +256,18 @@ void Arguments::processArgs(int argc, char* argv[])
 				case '?':
 					if (optopt == 'c')
 					{
-						fprintf(stderr,"Option -%c requires an argument.\n",optopt);
+						fprintf(stderr,"Option -%c requires an argument. Run with -h for help.\n",optopt);
+						this->help_displayed = true;
 					}
 					else if (isprint(optopt))
 					{
-						fprintf(stderr,"Unknown option `-%c'.\n",optopt);
+						fprintf(stderr,"Unknown option `-%c'. Run with -h for help.\n",optopt);
+						this->help_displayed = true;
 					}
 					else
 					{
-						fprintf(stderr,"Unknown option character `\\x%x'.\n",optopt);
+						fprintf(stderr,"Unknown option character `\\x%x'. Run with -h for help.\n",optopt);
+						this->help_displayed = true;
 					}
 					return;
 				default:
@@ -272,6 +275,10 @@ void Arguments::processArgs(int argc, char* argv[])
 					abort();
 			}
 		}
+	}
+	else if (argc == 1)
+	{
+		cerr << "Note: you are receiving input from STDIN and sending output to STDOUT\n" << endl;
 	}
 
 	// check for positional parameters (which is an error)
