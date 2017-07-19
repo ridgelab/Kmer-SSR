@@ -584,7 +584,8 @@ vector<SSR*>* findSSRsNormally(Task* task, Arguments* args, AtomicityChecker* at
 					//}
 
 					//index += (ssr->getLength() - periods[i] - 1);
-					index += (ssr->getLength() - *itr - 1);
+					index += (ssr->getLength() - *itr);
+					//index += (ssr->getLength() - *itr - 1);
 
 					if (keepSSR(ssr, args))
 					{
