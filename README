@@ -31,8 +31,8 @@ key features of our tool are as follows:
     - Easily parsed, tab-delimited output
     - Runs on Linux (not Windows or Mac OS X)
 
-See our paper in __journal__ for further information:
-    http://sub.domain.tld/path/to/resource
+See our paper in Bioinformatics for further information:
+    https://doi.org/10.1093/bioinformatics/btx538
 
 
 II. Installation Instructions
